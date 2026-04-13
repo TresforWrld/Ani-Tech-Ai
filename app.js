@@ -13,7 +13,7 @@ const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${
 
 // JSONBin — one bin stores everything: { users: {}, chats: {} }
 // X-Master-Key is the only header needed for full access
-const JB_MASTER  = "$2a$10$t1pvIZA0plsMluFZ9oGuHeEXnbeyv10dGX5p15Q0xdfXGg2fsW0.2";
+const JB_MASTER  = "$2a$10$VJXQzwtVgNhMTIJiiQvpy.hG7XaRD0.H42NyZhKzeLRungeekMmpO";
 const JB_BASE    = "https://api.jsonbin.io/v3/b";
 const BIN_ID_KEY = "anitechai_bin_id_v2";  // localStorage key for our single bin ID
 const SESSION_KEY= "anitechai_session_v2";
