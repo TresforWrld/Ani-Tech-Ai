@@ -12,7 +12,7 @@
  * ─────────────────────────────────────────────────
  */
 
-const GEMINI_KEY   = "YOUR_GEMINI_KEY_HERE"; // ← paste your free key here
+const GEMINI_KEY   = "AIzaSyA64p41nz-OhlfWw_WHixKGGu77Y8mFncc"; // ← paste your free key here
 const GEMINI_MODEL = "gemini-2.0-flash";
 const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
 
