@@ -15,7 +15,7 @@ const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${
 // X-Master-Key is the only header needed for full access
 const JB_MASTER  = "$2a$10$VJXQzwtVgNhMTIJiiQvpy.hG7XaRD0.H42NyZhKzeLRungeekMmpO";
 const JB_BASE    = "https://api.jsonbin.io/v3/b";
-const BIN_ID_KEY = "anitechai_bin_id_v2";  // localStorage key for our single bin ID
+const BIN_ID_KEY = "69b45e9caa77b81da9e13f68";  // localStorage key for our single bin ID
 const SESSION_KEY= "anitechai_session_v2";
 
 const TRIAL_DAYS = 30;
