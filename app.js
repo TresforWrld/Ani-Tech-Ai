@@ -6,17 +6,19 @@
  */
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
-const GROQ_KEY   = "YOUR_GROQ_KEY_HERE"; // Get free key at console.groq.com
+// Get your FREE Groq key at https://console.groq.com (no credit card needed)
+const GROQ_KEY   = "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";
 const GROQ_URL   = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+const GROQ_MODEL = "llama-3.3-70b-versatile"; // 30 RPM, 1000 RPD free
 
-const JB_MASTER  = "$2a$10$t1pvIZA0plsMluFZ9oGuHeEXnbeyv10dGX5p15Q0xdfXGg2fsW0.2";
+// JSONBin.io — one bin stores everything: { users: {}, chats: {} }
+const JB_MASTER  = "$2a$10$VJXQzwtVgNhMTIJiiQvpy.hG7XaRD0.H42NyZhKzeLRungeekMmpO";
 const JB_BASE    = "https://api.jsonbin.io/v3/b";
-const BIN_ID_KEY = "anitechai_bin_id_v2";
+const BIN_ID_KEY = "69b14c5bc3097a1dd5173665";
 const SESSION_KEY= "anitechai_session_v2";
 
-const TRIAL_DAYS  = 30;
-const ADMIN_EMAIL = "admin@anicadetech.xyz"; // Change to your admin email
+const TRIAL_DAYS = 30;
+const ADMIN_EMAIL = "anicadetech@gmail.com"; // Change to your admin email
 
 // ─── System Prompt ────────────────────────────────────────────────────────────
 const SYSTEM = `You are Ani-Tech AI — the official AI assistant of ANICADE Tech, built in 2026.
