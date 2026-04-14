@@ -26,7 +26,7 @@ a{color:inherit;text-decoration:none}
 .spinner.sm{width:14px;height:14px;border-width:1.5px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ─── INSTALL BANNER (COMPACT) ─── */
+/* ─── INSTALL BANNER (EMOJI SCALE) ─── */
 .install-banner{
   position: fixed;
   top: 0;
@@ -36,28 +36,62 @@ a{color:inherit;text-decoration:none}
 
   display: flex;
   align-items: center;
-  gap: 6px; /* reduced from 12px */
+  gap: 6px;
 
   background: var(--bg2);
   border-bottom: 1px solid rgba(0,255,209,.2);
 
-  padding: 6px 10px; /* reduced from 10px 16px */
+  padding: 5px 10px;
 
-  font-size: 14px; /* keeps it compact */
+  font-size: 13px;
   line-height: 1.2;
 
   animation: slideDown .3s ease;
 }
-@keyframes slideDown{from{transform:translateY(-100%)}to{transform:none}}
-.install-icon{width:32px;height:32px;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(0,255,209,.4))}
-.install-text{flex:1;min-width:0}
-.install-text strong{display:block;font-size:.83rem;color:var(--tx)}
-.install-text span{font-size:.72rem;color:var(--tx2)}
-.install-yes{background:linear-gradient(135deg,var(--ac),var(--ac2));border:none;border-radius:7px;color:#020810;font-family:var(--font);font-size:.78rem;font-weight:700;padding:6px 14px;cursor:pointer;flex-shrink:0;transition:all .2s}
-.install-yes:hover{transform:scale(1.05)}
-.install-no{background:none;border:none;color:var(--tx3);cursor:pointer;padding:4px;display:flex;align-items:center;flex-shrink:0}
-.install-no svg{width:16px;height:16px}
-.install-no:hover{color:var(--red)}
+
+/* ICON — scaled down from 32px */
+.install-icon{
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(0,255,209,.35));
+}
+
+/* TEXT — tighter hierarchy */
+.install-text strong{
+  display: block;
+  font-size: .75rem;
+  color: var(--tx);
+}
+
+.install-text span{
+  font-size: .65rem;
+  color: var(--tx2);
+}
+
+/* BUTTON — smaller, cleaner */
+.install-yes{
+  background: linear-gradient(135deg,var(--ac),var(--ac2));
+  border: none;
+  border-radius: 6px;
+  color: #020810;
+  font-family: var(--font);
+  font-size: .7rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* CLOSE BUTTON */
+.install-no{
+  padding: 3px;
+}
+
+.install-no svg{
+  width: 14px;
+  height: 14px;
+}
 
 /* ─── AUTH ─── */
 .auth-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:900;padding:20px}
