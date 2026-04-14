@@ -6,14 +6,14 @@
  */
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
-const GROQ_KEY      = "YOUR_GROQ_KEY_HERE"; // Get free key at console.groq.com
+const GROQ_KEY      = "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"; // Get free key at console.groq.com
 const GROQ_URL      = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL    = "llama-3.1-8b-instant";   // 14,400 RPD free — high limit
 const GROQ_FALLBACK = "llama3-8b-8192";           // auto-fallback if rate limited
 
-const JB_MASTER  = "$2a$10$t1pvIZA0plsMluFZ9oGuHeEXnbeyv10dGX5p15Q0xdfXGg2fsW0.2";
+const JB_MASTER  = "$2a$10$VJXQzwtVgNhMTIJiiQvpy.hG7XaRD0.H42NyZhKzeLRungeekMmpO";
 const JB_BASE    = "https://api.jsonbin.io/v3/b";
-const BIN_ID_KEY = "anitechai_bin_id_v2";
+const BIN_ID_KEY = "69b14c5bc3097a1dd5173665";
 const SESSION_KEY= "anitechai_session_v2";
 
 const TRIAL_DAYS  = 30;
