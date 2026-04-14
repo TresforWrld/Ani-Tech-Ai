@@ -26,61 +26,90 @@ a{color:inherit;text-decoration:none}
 .spinner.sm{width:14px;height:14px;border-width:1.5px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ─── INSTALL BANNER (FORCED EMOJI SCALE) ─── */
-.install-banner{
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  z-index:9000;
+/* ─── INSTALL BANNER (CONSISTENT ICON SIZE) ─── */
+.install-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9000;
 
-  display:flex;
-  align-items:center;
-  gap:0.4em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
 
-  background:var(--bg2);
-  border-bottom:1px solid rgba(0,255,209,.2);
+  background: var(--bg2);
+  border-bottom: 1px solid rgba(0,255,209,.2);
 
-  padding:0.35em 0.7em;
+  padding: 0.4em 0.8em;
 
-  font-size:13px; /* controls EVERYTHING */
-  line-height:1.2;
+  font-size: 13px;
+  line-height: 1.2;
 
-  animation:slideDown .3s ease;
+  animation: slideDown .3s ease;
 }
 
-/* FORCE everything inside to scale with text */
-.install-banner *{
-  font-size:inherit !important;
+/* ICON — match other app icons */
+.install-icon {
+  width: 24px;   /* same as sidebar/auth icons */
+  height: 24px;
+  flex-shrink: 0;
 }
 
-/* ICON — force override */
-.install-icon{
-  width:1em !important;
-  height:1em !important;
-  flex-shrink:0;
+.install-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 /* TEXT */
-.install-text strong{
-  font-size:1em;
+.install-text strong {
+  font-size: 1em;
 }
 
-.install-text span{
-  font-size:0.85em;
+.install-text span {
+  font-size: 0.85em;
+  color: var(--tx2);
 }
 
-/* BUTTON */
-.install-yes{
-  font-size:0.9em !important;
-  padding:0.25em 0.6em !important;
-  border-radius:0.4em;
+/* INSTALL BUTTON */
+.install-yes {
+  font-size: 0.9em;
+  padding: 0.3em 0.7em;
+  border-radius: 0.4em;
+  background: linear-gradient(135deg, var(--ac), var(--ac2));
+  border: none;
+  color: #020810;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.install-yes:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,255,209,.25);
 }
 
 /* CLOSE BUTTON */
-.install-no svg{
-  width:1em !important;
-  height:1em !important;
+.install-no {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.install-no svg {
+  width: 14px;   /* consistent with other small icons */
+  height: 14px;
+  color: var(--tx2);
+  transition: color .2s;
+}
+
+.install-no:hover svg {
+  color: var(--red);
 }
 
 /* ─── AUTH ─── */
