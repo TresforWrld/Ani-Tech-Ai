@@ -1,0 +1,48 @@
+{
+  "name": "Ani-Tech AI — ANICADE Tech",
+  "short_name": "Ani-Tech AI",
+  "description": "Real-time AI assistant by ANICADE Tech. Coding, images, voice, and more.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#070B11",
+  "theme_color": "#070B11",
+  "orientation": "any",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities", "education"],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "New Chat",
+      "url": "./index.html",
+      "description": "Start a new conversation"
+    }
+  ]
+}
