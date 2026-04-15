@@ -1,7 +1,7 @@
 {
   "name": "Ani-Tech AI — ANICADE Tech",
   "short_name": "Ani-Tech AI",
-  "description": "Real-time coding intelligence by ANICADE Tech. Powered by Groq.",
+  "description": "Real-time coding intelligence by ANICADE Tech.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#070B11",
