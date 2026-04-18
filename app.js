@@ -1,13 +1,13 @@
 /**
- * ANI-TECH AI v4.1 — by ANICADE Tech
+ * ANI-TECH AI v4.2 — by ANICADE Tech
  * CEO: Tresfor Wrld | www.anicadetech.xyz | Kabwe, Zambia
  *
  * v4.0 changes:
  *  ✓ No install popup (removed)
  *  ✓ Session persists across reload AND view changes
  *  ✓ Reviews bin filled: 69e2b0e6aaba8821970ecd8a
- *  ✓ AI: xAI Grok (grok-3-mini / grok-3) — replaces Groq
- *  ✓ Subscription plans: Free/K25/K149/K399/K399+ per month
+ *  ✓ AI: Groq (llama-3.3-70b + rotation) — xAI Grok ready when provisioned
+ *  ✓ Plans: Free/K25/K50/K100/K200 per month (original prices)
  *  ✓ Free plan strict limits, paid = unlimited
  *  ✓ Admin: edit user subscription + approve payments
  *  ✓ Global chat (live between all users via JSONBin polling)
@@ -18,14 +18,21 @@
  */
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-// xAI Grok — new API (replaces Groq)
-const XAI_KEY    = "xai-RKGHkeWsiWbfzTdsJwnFTL7qNwqmGbSonHaKUREMOMZ44I2avLKpViqMhHhhctXKYqkxVlEMBWVknvcI";
-const XAI_URL    = "https://api.x.ai/v1/chat/completions";
-const XAI_MODEL  = "grok-3-mini";        // primary — fast and capable
-const XAI_MODELS = [
-  "grok-3-mini",      // fastest
-  "grok-3",           // full power fallback
+// AI: Groq (reliable free tier) with xAI Grok as upgrade option
+// Groq works now — xAI key kept for future use when account is provisioned
+const GROQ_KEY   = "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";
+const GROQ_URL   = "https://api.groq.com/openai/v1/chat/completions";
+// 4-model rotation — if one hits rate limit, next is tried automatically
+const GROQ_MODELS = [
+  "llama-3.3-70b-versatile",   // best quality
+  "llama-3.1-8b-instant",      // fastest
+  "gemma2-9b-it",              // fallback 1
+  "mixtral-8x7b-32768",        // fallback 2
 ];
+// xAI Grok — will be activated once account is provisioned at x.ai
+const XAI_KEY   = "xai-RKGHkeWsiWbfzTdsJwnFTL7qNwqmGbSonHaKUREMOMZ44I2avLKpViqMhHhhctXKYqkxVlEMBWVknvcI";
+const XAI_URL   = "https://api.x.ai/v1/chat/completions";
+const USE_XAI   = false; // set to true once x.ai account has API access
 
 const JB_MASTER  = "$2a$10$VJXQzwtVgNhMTIJiiQvpy.hG7XaRD0.H42NyZhKzeLRungeekMmpO";
 const JB_BASE    = "https://api.jsonbin.io/v3/b";
@@ -47,9 +54,9 @@ const makeImgUrl = (prompt, style="") => {
 const PLANS = {
   free:    { name:"Free",    price:"K0",   perMonth:"",       color:"#94A3B8", msgLimit:20,  imgLimit:3,  badge:"FR", features:["20 messages/day","3 image generations/day","Basic AI access","Community chat"] },
   starter: { name:"Starter", price:"K25",  perMonth:"/month", color:"#00BFFF", msgLimit:999, imgLimit:999, badge:"ST", features:["Unlimited messages","Unlimited images","Priority AI","Full code editor","Badge: Starter","WhatsApp support"] },
-  pro:     { name:"Pro",     price:"K149", perMonth:"/month", color:"#C6A85C", msgLimit:999, imgLimit:999, badge:"PR", features:["Everything in Starter","Faster responses","Custom AI personality","Pro badge","Priority support"] },
-  elite:   { name:"Elite",   price:"K399", perMonth:"/month", color:"#39ff14", msgLimit:999, imgLimit:999, badge:"EL", features:["Everything in Pro","Team features (up to 5)","API access","Elite badge","Direct dev support","Early features"] },
-  business:{ name:"Business",price:"K399+",perMonth:"/month", color:"#FF6B35", msgLimit:999, imgLimit:999, badge:"BZ", features:["Everything in Elite","Unlimited team seats","Custom AI branding","Business badge","Account manager","Agent commission 15%"] },
+  pro:     { name:"Pro",     price:"K50",  perMonth:"/month", color:"#C6A85C", msgLimit:999, imgLimit:999, badge:"PR", features:["Everything in Starter","Faster responses","Custom AI personality","Pro badge","Priority support"] },
+  elite:   { name:"Elite",   price:"K100", perMonth:"/month", color:"#39ff14", msgLimit:999, imgLimit:999, badge:"EL", features:["Everything in Pro","Team features (up to 5)","API access","Elite badge","Direct dev support","Early features"] },
+  business:{ name:"Business",price:"K200", perMonth:"/month", color:"#FF6B35", msgLimit:999, imgLimit:999, badge:"BZ", features:["Everything in Elite","Unlimited team seats","Custom AI branding","Business badge","Account manager","Agent commission 15%"] },
 };
 
 // ─── BADGES ───────────────────────────────────────────────────────────────────
@@ -116,20 +123,57 @@ const JB_HDR = { "Content-Type":"application/json", "X-Master-Key":JB_MASTER };
 
 async function dbInit() {
   dbSetStatus("syncing","Loading…");
-  const res = await fetch(`${JB_BASE}/${FIXED_BIN}/latest`, { headers:JB_HDR });
-  if (!res.ok) throw new Error(`DB load failed (${res.status})`);
-  const j = await res.json();
-  DB = { users:{}, chats:{}, adminNote:"", banned:{}, globalChat:[], payments:[], ...(j.record||{}) };
-  dbSetStatus("ok","Connected");
+  let attempts = 0;
+  while(attempts < 3) {
+    try {
+      const res = await fetch(`${JB_BASE}/${FIXED_BIN}/latest`, {
+        headers: JB_HDR,
+        cache: "no-store"  // always get fresh data, never cached
+      });
+      if(res.ok) {
+        const j = await res.json();
+        // Deep merge: preserve existing in-memory data if DB record is somehow empty
+        const record = j.record || {};
+        DB = {
+          users:      record.users      || DB.users      || {},
+          chats:      record.chats      || DB.chats      || {},
+          adminNote:  record.adminNote  ?? DB.adminNote  ?? "",
+          banned:     record.banned     || DB.banned     || {},
+          globalChat: record.globalChat || DB.globalChat || [],
+          payments:   record.payments   || DB.payments   || [],
+        };
+        dbSetStatus("ok","Connected");
+        return;
+      }
+      if(res.status === 401 || res.status === 403) {
+        throw new Error("DB access denied — check JSONBin master key");
+      }
+      attempts++;
+      await new Promise(r => setTimeout(r, 800 * attempts));
+    } catch(e) {
+      attempts++;
+      if(attempts >= 3) throw new Error("Cannot reach database. Check internet connection.");
+      await new Promise(r => setTimeout(r, 800 * attempts));
+    }
+  }
+  throw new Error("Database unavailable after 3 attempts.");
 }
 
 async function dbSave() {
   dbSetStatus("syncing","Saving…");
-  try {
-    const res = await fetch(`${JB_BASE}/${FIXED_BIN}`, { method:"PUT", headers:JB_HDR, body:JSON.stringify(DB) });
-    if (!res.ok) throw new Error(`Save ${res.status}`);
-    dbSetStatus("ok","Saved ✓");
-  } catch(e) { dbSetStatus("err","Save failed"); console.error(e); }
+  for(let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${JB_BASE}/${FIXED_BIN}`, {
+        method: "PUT", headers: JB_HDR, body: JSON.stringify(DB)
+      });
+      if(res.ok) { dbSetStatus("ok","Saved ✓"); return; }
+      if(res.status === 401 || res.status === 403) { dbSetStatus("err","DB auth error"); return; }
+      await new Promise(r => setTimeout(r, 600));
+    } catch(e) {
+      if(attempt === 2) { dbSetStatus("err","Save failed — check connection"); console.error("dbSave:",e); }
+      else await new Promise(r => setTimeout(r, 600));
+    }
+  }
 }
 
 let saveTimer = null;
@@ -140,10 +184,27 @@ function dbSetStatus(state,text) {
   const t=document.getElementById("dbStatusText"); if(t) t.textContent=text;
 }
 
-// ─── SESSION — persists across reload AND desktop/mobile view change ───────────
-const getSession  = () => { try{return JSON.parse(localStorage.getItem(SESSION_KEY)||"null");}catch{return null;} };
-const saveSession = u  => localStorage.setItem(SESSION_KEY, JSON.stringify(u));
-const clearSess   = ()  => localStorage.removeItem(SESSION_KEY);
+// ─── SESSION — stored in both localStorage (persistent) + sessionStorage (fallback) ──
+const getSession = () => {
+  try {
+    const ls = localStorage.getItem(SESSION_KEY);
+    if(ls && ls !== "null") return JSON.parse(ls);
+  } catch(e) {}
+  try {
+    const ss = sessionStorage.getItem(SESSION_KEY);
+    if(ss && ss !== "null") return JSON.parse(ss);
+  } catch(e) {}
+  return null;
+};
+const saveSession = u => {
+  const v = JSON.stringify(u);
+  try { localStorage.setItem(SESSION_KEY, v); } catch(e) {}
+  try { sessionStorage.setItem(SESSION_KEY, v); } catch(e) {}
+};
+const clearSess = () => {
+  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+  try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
+};
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function h(s) { let v=5381; for(let i=0;i<s.length;i++) v=((v<<5)+v)^s.charCodeAt(i); return (v>>>0).toString(36); }
@@ -630,8 +691,12 @@ async function sendGlobalMsg() {
 
 // ─── VIEWS ────────────────────────────────────────────────────────────────────
 function switchView(view) {
+  if(activeView === view) {
+    // Already on this view — just close sidebar
+    document.getElementById("sidebar")?.classList.remove("open");
+    return;
+  }
   activeView=view;
-  // Always close sidebar when switching views (mobile UX)
   document.getElementById("sidebar")?.classList.remove("open");
   const views=["chat","code","pricing","global","contact","legal"];
   views.forEach(v=>{
@@ -976,9 +1041,8 @@ async function send() {
   finally{busy=false;document.getElementById("sendBtn").disabled=false;document.getElementById("inputTa").focus();}
 }
 
-// ─── xAI GROK API ────────────────────────────────────────────────────────────
+// ─── AI API — Groq (active) / xAI (ready when provisioned) ──────────────────
 async function callGroq(history) {
-  // Uses xAI Grok API — OpenAI-compatible endpoint
   const lastMsg = history[history.length-1]?.text || "";
   let searchNote = "";
   if(needsSearch(lastMsg)){
@@ -990,34 +1054,44 @@ async function callGroq(history) {
     const content = (i === history.length-1 && searchNote) ? m.text+searchNote : m.text;
     messages.push({ role: m.role==="assistant" ? "assistant" : "user", content });
   });
-  const hdrs = {
-    "Content-Type":  "application/json",
-    "Authorization": `Bearer ${XAI_KEY}`
-  };
-  for(const model of XAI_MODELS) {
+
+  // ── Try xAI Grok first if account is provisioned ──
+  if(USE_XAI) {
     try {
       const res = await fetch(XAI_URL, {
-        method:  "POST",
-        headers: hdrs,
-        body:    JSON.stringify({ model, messages, temperature:0.7, max_tokens:4096, stream:false })
+        method: "POST",
+        headers: { "Content-Type":"application/json", "Authorization":`Bearer ${XAI_KEY}` },
+        body: JSON.stringify({ model:"grok-3-mini", messages, temperature:0.7, max_tokens:4096, stream:false })
       });
-      if(res.status === 429) { await new Promise(r=>setTimeout(r,1000)); continue; }
-      if(res.status === 401) throw new Error("xAI API key rejected — check XAI_KEY in app.js");
-      if(res.status === 403) throw new Error("xAI API access denied — check your account at x.ai");
-      if(!res.ok) {
-        const e = await res.json().catch(()=>({}));
-        throw new Error(e?.error?.message || `xAI error ${res.status}`);
+      if(res.ok) {
+        const data = await res.json();
+        const reply = data?.choices?.[0]?.message?.content;
+        if(reply) return reply;
       }
+    } catch(e) { console.warn("xAI failed, falling back to Groq:", e.message); }
+  }
+
+  // ── Groq: 4-model rotation, never blocks on rate limit ──
+  const hdrs = { "Content-Type":"application/json", "Authorization":`Bearer ${GROQ_KEY}` };
+  for(const model of GROQ_MODELS) {
+    try {
+      const res = await fetch(GROQ_URL, {
+        method: "POST", headers: hdrs,
+        body: JSON.stringify({ model, messages, temperature:0.7, max_tokens:4096, top_p:0.95 })
+      });
+      if(res.status === 429) { await new Promise(r=>setTimeout(r,600)); continue; }
+      if(res.status === 401) throw new Error("AI service key error — contact ANICADE Tech support.");
+      if(!res.ok) { const e=await res.json().catch(()=>({})); throw new Error(e?.error?.message||`AI error ${res.status}`); }
       const data  = await res.json();
       const reply = data?.choices?.[0]?.message?.content;
-      if(!reply) throw new Error("Empty response from Grok. Please try again.");
+      if(!reply) throw new Error("Empty response — please try again.");
       return reply;
     } catch(e) {
       if(e.message.includes("429") || e.message.toLowerCase().includes("rate")) continue;
       throw e;
     }
   }
-  throw new Error("Grok is busy right now — please wait a moment and try again.");
+  throw new Error("AI is busy — please wait 30 seconds and try again.");
 }
 
 // ─── PWA INSTALL (no popup — sidebar button only) ─────────────────────────────
