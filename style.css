@@ -837,10 +837,6 @@ textarea::placeholder{color:var(--tx3)}
 }
 
 /* ── Code buttons — use text not special chars ── */
-.code-btn.run::before { content: "Run"; }
-.code-btn.copy::before { content: "Copy"; }
-.code-btn.ai::before { content: "AI Help"; }
-.code-btn.clear::before { content: "Clear"; }
 
 /* ── Input area: prevent squeeze on narrow screens ── */
 .input-box {
