@@ -18,20 +18,15 @@
  */
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-// AI: Groq (reliable free tier) with xAI Grok as upgrade option
-// Groq works now — xAI key kept for future use when account is provisioned
-const GROQ_KEY   = "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";
-const GROQ_URL   = "https://api.groq.com/openai/v1/chat/completions";
-// 4-model rotation — if one hits rate limit, next is tried automatically
-const GROQ_MODELS = [
-  "llama-3.1-8b-instant",      // confirmed free tier, very fast
-  "llama3-8b-8192",            // stable fallback
-  "gemma2-9b-it",              // Google model fallback
+// AI: xAI Grok (primary) — user's active API key
+const AI_KEY   = "xai-RKGHkeWsiWbfzTdsJwnFTL7qNwqmGbSonHaKUREMOMZ44I2avLKpViqMhHhhctXKYqkxVlEMBWVknvcI";
+const AI_URL   = "https://api.x.ai/v1/chat/completions";
+// Model list — try in order, skip on 429 rate limit
+const AI_MODELS = [
+  "grok-3-mini-fast",   // fastest and cheapest
+  "grok-3-mini",        // standard
+  "grok-3",             // full power (if available on plan)
 ];
-// xAI Grok — will be activated once account is provisioned at x.ai
-const XAI_KEY   = "xai-RKGHkeWsiWbfzTdsJwnFTL7qNwqmGbSonHaKUREMOMZ44I2avLKpViqMhHhhctXKYqkxVlEMBWVknvcI";
-const XAI_URL   = "https://api.x.ai/v1/chat/completions";
-const USE_XAI   = false; // set to true once x.ai account has API access
 
 const JB_MASTER  = "$2a$10$VJXQzwtVgNhMTIJiiQvpy.hG7XaRD0.H42NyZhKzeLRungeekMmpO";
 const JB_BASE    = "https://api.jsonbin.io/v3/b";
@@ -323,9 +318,15 @@ async function handleLogin() {
     await dbInit();
     const id = uidH(email);
     const u  = DB.users[id];
-    // Account not found at all
+    // Account not found
     if(!u) {
-      showErr("liErr","No account found with this email. Please register first.");
+      // DB may have 0 users if bin was reset — give user the option
+      const userCount = Object.keys(DB.users).length;
+      if(userCount === 0) {
+        showErr("liErr","No accounts found in database. Please register a new account.");
+      } else {
+        showErr("liErr","Email not found. Check your email or register a new account.");
+      }
       return;
     }
     // Password mismatch — could be old hash from a previous version
@@ -337,7 +338,7 @@ async function handleLogin() {
         DB.users[id].pw = pwHash(pass,id);
         await dbSave();
       } else {
-        showErr("liErr","Incorrect password. If you just registered, try creating a new account.");
+        showErr("liErr","Incorrect email or password.");
         return;
       }
     }
@@ -818,30 +819,60 @@ function initCodeEditor() {
 }
 
 function runCode() {
-  // Code editor available to all users
-  const lang=document.getElementById("codeLang").value;
-  const code=document.getElementById("codeEditor").value;
-  const output=document.getElementById("codeOutput");
-  if(!code.trim()){output.textContent="// Nothing to run";return;}
-  if(lang==="javascript"){
-    output.textContent="";
-    const origLog=console.log, origErr=console.error, origWarn=console.warn;
-    const logs=[];
-    console.log=(...a)=>{logs.push(a.map(String).join(" "));origLog(...a);};
-    console.error=(...a)=>{logs.push("ERROR: "+a.map(String).join(" "));origErr(...a);};
-    console.warn=(...a)=>{logs.push("WARN: "+a.map(String).join(" "));origWarn(...a);};
-    try {
-      const result=eval(code);
-      if(result!==undefined) logs.push("→ "+String(result));
-      output.textContent=logs.length?logs.join("\n"):"// Code ran (no output)";
-    } catch(e) {
-      output.textContent="// Error: "+e.message;
-    } finally {
-      console.log=origLog; console.error=origErr; console.warn=origWarn;
-    }
-  } else {
-    output.textContent=`// Note: ${lang.toUpperCase()} runs server-side.\n// Paste your code into the AI chat and ask it to explain or debug it!`;
+  // Paid plans + admin only
+  if(!isPaid(curUser) && !isAdmin(curUser)) {
+    toast("Code execution requires a paid plan (K25/month+). Tap Plans to upgrade.","warn");
+    return;
   }
+  const lang   = document.getElementById("codeLang").value;
+  const code   = document.getElementById("codeEditor").value.trim();
+  const output = document.getElementById("codeOutput");
+  const preview= document.getElementById("codePreview");
+  if(!code) { output.textContent="// Nothing to run"; return; }
+
+  // ── HTML / CSS — render in iframe preview ──────────────────
+  if(lang === "html" || lang === "css") {
+    const htmlContent = lang === "css"
+      ? `<!DOCTYPE html><html><head><style>${code}</style></head><body><p>CSS applied. Add HTML elements in the editor to preview.</p></body></html>`
+      : code;
+    if(preview) {
+      preview.style.display = "block";
+      const doc = preview.contentDocument || preview.contentWindow.document;
+      doc.open(); doc.write(htmlContent); doc.close();
+    }
+    output.textContent = `// ${lang.toUpperCase()} rendered in preview above`;
+    return;
+  }
+
+  // Hide preview for non-HTML runs
+  if(preview) preview.style.display = "none";
+
+  // ── JavaScript — execute in sandboxed context ───────────────
+  if(lang === "javascript") {
+    output.textContent = "";
+    const logs = [];
+    const sandbox = {
+      console: {
+        log:   (...a) => logs.push(a.map(v=>JSON.stringify(v)??String(v)).join(" ")),
+        error: (...a) => logs.push("ERROR: "+a.map(String).join(" ")),
+        warn:  (...a) => logs.push("WARN:  "+a.map(String).join(" ")),
+        info:  (...a) => logs.push("INFO:  "+a.map(String).join(" ")),
+      }
+    };
+    try {
+      // Wrap in function so return statements work, inject console
+      const fn = new Function("console", code);
+      const result = fn(sandbox.console);
+      if(result !== undefined) logs.push("→ " + JSON.stringify(result));
+      output.textContent = logs.length ? logs.join("\n") : "// Ran successfully (no output)";
+    } catch(e) {
+      output.textContent = "// Runtime error: " + e.message;
+    }
+    return;
+  }
+
+  // ── Other languages — send to AI for explanation ───────────
+  output.textContent = `// ${lang.toUpperCase()} cannot run in the browser.\n// Click "AI Help" to have Ani-Tech AI explain or debug your code.`;
 }
 
 function copyCode() {
@@ -1083,62 +1114,34 @@ async function callGroq(history) {
     messages.push({ role: m.role==="assistant" ? "assistant" : "user", content });
   });
 
-  // ── Try xAI Grok first if account is provisioned ──
-  if(USE_XAI) {
-    try {
-      const res = await fetch(XAI_URL, {
-        method: "POST",
-        headers: { "Content-Type":"application/json", "Authorization":`Bearer ${XAI_KEY}` },
-        body: JSON.stringify({ model:"grok-3-mini", messages, temperature:0.7, max_tokens:4096, stream:false })
-      });
-      if(res.ok) {
-        const data = await res.json();
-        const reply = data?.choices?.[0]?.message?.content;
-        if(reply) return reply;
-      }
-    } catch(e) { console.warn("xAI failed, falling back to Groq:", e.message); }
-  }
-
-  // ── Groq: model rotation, auto-retry on rate limit ──
-  const hdrs = { "Content-Type":"application/json", "Authorization":`Bearer ${GROQ_KEY}` };
+  // ── xAI Grok: model rotation, skip on rate limit ──
+  const hdrs = { "Content-Type":"application/json", "Authorization":`Bearer ${AI_KEY}` };
   let lastErr = null;
-  for(const model of GROQ_MODELS) {
+  for(const model of AI_MODELS) {
     try {
-      const res = await fetch(GROQ_URL, {
+      const res = await fetch(AI_URL, {
         method: "POST", headers: hdrs,
-        body: JSON.stringify({ model, messages, temperature:0.7, max_tokens:2048, top_p:0.9 })
+        body: JSON.stringify({ model, messages, temperature:0.7, max_tokens:2048, stream:false })
       });
-      if(res.status === 429) {
-        lastErr = new Error("Rate limited — trying next model");
-        await new Promise(r=>setTimeout(r,500));
-        continue;
-      }
-      if(res.status === 401) {
-        // Key rejected — give the user the actual Groq error
-        const e = await res.json().catch(()=>({}));
-        throw new Error("AI key error: " + (e?.error?.message || "401 Unauthorized. The API key may have expired."));
-      }
-      if(res.status === 403) {
-        const e = await res.json().catch(()=>({}));
-        throw new Error("AI access error: " + (e?.error?.message || "403 Forbidden. Check your Groq account."));
-      }
+      if(res.status === 429) { await new Promise(r=>setTimeout(r,800)); lastErr=new Error("Rate limited"); continue; }
       if(!res.ok) {
         const e = await res.json().catch(()=>({}));
-        lastErr = new Error(e?.error?.message || `AI returned ${res.status}`);
+        // For any auth/plan error, try next model before giving up
+        lastErr = new Error("AI unavailable");
+        if(res.status===401||res.status===403||res.status===404) continue;
         continue;
       }
       const data  = await res.json();
       const reply = data?.choices?.[0]?.message?.content?.trim();
-      if(!reply) { lastErr = new Error("Empty response"); continue; }
+      if(!reply) { lastErr=new Error("Empty response"); continue; }
       return reply;
     } catch(e) {
-      if(e.message.includes("429") || e.message.toLowerCase().includes("rate")) {
-        lastErr = e; continue;
-      }
-      throw e; // non-recoverable — bubble up
+      lastErr = e;
+      if(e.message.includes("fetch")||e.message.includes("network")) continue;
+      continue; // try next model for any error
     }
   }
-  throw lastErr || new Error("All AI models unavailable. Please try again in a moment.");
+  throw new Error("Something went wrong. Please try again in a moment.");
 }
 
 // ─── PWA INSTALL (no popup — sidebar button only) ─────────────────────────────
