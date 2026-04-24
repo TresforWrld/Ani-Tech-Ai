@@ -284,9 +284,9 @@
         <div class="code-editor-body">
           <div class="code-editor-main">
             <div class="code-line-nums" id="lineNums">1</div>
-            <textarea id="codeEditor" class="code-textarea" spellcheck="false" placeholder="// Enter your code here…
-// Click Run to execute JavaScript
-// Click AI Help to analyse with Ani-Tech AI" oninput="updateLineNums()"></textarea>
+            <textarea id="codeEditor" class="code-textarea" spellcheck="false" onscroll="syncEditorScroll()" placeholder="// Enter your code here…
+// Click Run to execute  |  Click AI Help to ask the AI about your code
+// Supports: JavaScript (live), Python, HTML, CSS and more" oninput="updateLineNums()"></textarea>
           </div>
           <div class="code-output-panel">
             <div class="code-output-header">
