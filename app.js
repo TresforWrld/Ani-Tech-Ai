@@ -24,10 +24,9 @@ const GROQ_KEY   = "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";
 const GROQ_URL   = "https://api.groq.com/openai/v1/chat/completions";
 // 4-model rotation — if one hits rate limit, next is tried automatically
 const GROQ_MODELS = [
-  "llama-3.3-70b-versatile",   // best quality
-  "llama-3.1-8b-instant",      // fastest
-  "gemma2-9b-it",              // fallback 1
-  "mixtral-8x7b-32768",        // fallback 2
+  "llama-3.1-8b-instant",      // confirmed free tier, very fast
+  "llama3-8b-8192",            // stable fallback
+  "gemma2-9b-it",              // Google model fallback
 ];
 // xAI Grok — will be activated once account is provisioned at x.ai
 const XAI_KEY   = "xai-RKGHkeWsiWbfzTdsJwnFTL7qNwqmGbSonHaKUREMOMZ44I2avLKpViqMhHhhctXKYqkxVlEMBWVknvcI";
@@ -322,13 +321,31 @@ async function handleLogin() {
   setBusy("loginBtn",true);
   try {
     await dbInit();
-    const id=uidH(email), u=DB.users[id];
-    if(!u||u.pw!==pwHash(pass,id)){showErr("liErr","Incorrect email or password.");return;}
+    const id = uidH(email);
+    const u  = DB.users[id];
+    // Account not found at all
+    if(!u) {
+      showErr("liErr","No account found with this email. Please register first.");
+      return;
+    }
+    // Password mismatch — could be old hash from a previous version
+    if(u.pw !== pwHash(pass,id)) {
+      // Try legacy hash (no salt) for accounts created in older versions
+      const legacyHash = h(pass + id);
+      if(u.pw === legacyHash) {
+        // Migrate to new hash on login
+        DB.users[id].pw = pwHash(pass,id);
+        await dbSave();
+      } else {
+        showErr("liErr","Incorrect password. If you just registered, try creating a new account.");
+        return;
+      }
+    }
     if(DB.banned?.[id]){showErr("liErr","Account suspended. Contact ANICADE Tech.");return;}
     const user={uid:id,name:u.name,email,trialStart:u.trialStart,prefs:u.prefs||{},plan:u.plan||"free"};
     localStorage.setItem("faceid_uid",id);
     saveSession(user); boot(user);
-  } catch(e){console.error("Login:",e);showErr("liErr",e.message||"Connection error.");}
+  } catch(e){console.error("Login:",e);showErr("liErr",e.message||"Connection error. Try again.");}
   finally{setBusy("loginBtn",false,"Sign In");}
 }
 
@@ -345,7 +362,18 @@ async function handleSignup() {
   try {
     await dbInit();
     const id=uidH(email);
-    if(DB.users[id]){showErr("suErr","Account already exists.");return;}
+    if(DB.users[id]) {
+      // Account exists — check if password matches (re-login path)
+      if(DB.users[id].pw === pwHash(pass,id) || DB.users[id].pw === h(pass+id)) {
+        // Same credentials — just log them in
+        const u = DB.users[id];
+        const user={uid:id,name:u.name,email,trialStart:u.trialStart,prefs:u.prefs||{},plan:u.plan||"free"};
+        localStorage.setItem("faceid_uid",id);
+        saveSession(user); boot(user); return;
+      }
+      showErr("suErr","An account with this email already exists. Sign in instead.");
+      return;
+    }
     DB.users[id]={name,email,pw:pwHash(pass,id),trialStart:new Date().toISOString(),prefs:{},plan:"free",badges:["new_user","early_bird"],joinedAt:new Date().toISOString()};
     DB.chats[id]={};
     await dbSave();
@@ -790,7 +818,7 @@ function initCodeEditor() {
 }
 
 function runCode() {
-  if(!isPaid(curUser)&&!isAdmin(curUser)){toast("Code editor requires a paid plan. Upgrade for access!","warn");return;}
+  // Code editor available to all users
   const lang=document.getElementById("codeLang").value;
   const code=document.getElementById("codeEditor").value;
   const output=document.getElementById("codeOutput");
@@ -1071,27 +1099,46 @@ async function callGroq(history) {
     } catch(e) { console.warn("xAI failed, falling back to Groq:", e.message); }
   }
 
-  // ── Groq: 4-model rotation, never blocks on rate limit ──
+  // ── Groq: model rotation, auto-retry on rate limit ──
   const hdrs = { "Content-Type":"application/json", "Authorization":`Bearer ${GROQ_KEY}` };
+  let lastErr = null;
   for(const model of GROQ_MODELS) {
     try {
       const res = await fetch(GROQ_URL, {
         method: "POST", headers: hdrs,
-        body: JSON.stringify({ model, messages, temperature:0.7, max_tokens:4096, top_p:0.95 })
+        body: JSON.stringify({ model, messages, temperature:0.7, max_tokens:2048, top_p:0.9 })
       });
-      if(res.status === 429) { await new Promise(r=>setTimeout(r,600)); continue; }
-      if(res.status === 401) throw new Error("AI service key error — contact ANICADE Tech support.");
-      if(!res.ok) { const e=await res.json().catch(()=>({})); throw new Error(e?.error?.message||`AI error ${res.status}`); }
+      if(res.status === 429) {
+        lastErr = new Error("Rate limited — trying next model");
+        await new Promise(r=>setTimeout(r,500));
+        continue;
+      }
+      if(res.status === 401) {
+        // Key rejected — give the user the actual Groq error
+        const e = await res.json().catch(()=>({}));
+        throw new Error("AI key error: " + (e?.error?.message || "401 Unauthorized. The API key may have expired."));
+      }
+      if(res.status === 403) {
+        const e = await res.json().catch(()=>({}));
+        throw new Error("AI access error: " + (e?.error?.message || "403 Forbidden. Check your Groq account."));
+      }
+      if(!res.ok) {
+        const e = await res.json().catch(()=>({}));
+        lastErr = new Error(e?.error?.message || `AI returned ${res.status}`);
+        continue;
+      }
       const data  = await res.json();
-      const reply = data?.choices?.[0]?.message?.content;
-      if(!reply) throw new Error("Empty response — please try again.");
+      const reply = data?.choices?.[0]?.message?.content?.trim();
+      if(!reply) { lastErr = new Error("Empty response"); continue; }
       return reply;
     } catch(e) {
-      if(e.message.includes("429") || e.message.toLowerCase().includes("rate")) continue;
-      throw e;
+      if(e.message.includes("429") || e.message.toLowerCase().includes("rate")) {
+        lastErr = e; continue;
+      }
+      throw e; // non-recoverable — bubble up
     }
   }
-  throw new Error("AI is busy — please wait 30 seconds and try again.");
+  throw lastErr || new Error("All AI models unavailable. Please try again in a moment.");
 }
 
 // ─── PWA INSTALL (no popup — sidebar button only) ─────────────────────────────
@@ -1127,6 +1174,22 @@ function setupEvents() {
   ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}});
   ta.addEventListener("input",()=>{ta.style.height="auto";ta.style.height=Math.min(ta.scrollHeight,140)+"px";});
   document.querySelectorAll(".sug").forEach(b=>b.addEventListener("click",()=>{ta.value=b.dataset.q;send();}));
+
+  // Code editor: Tab key inserts 2 spaces, scroll syncs line numbers
+  const ce = document.getElementById("codeEditor");
+  if(ce) {
+    ce.addEventListener("keydown", e => {
+      if(e.key === "Tab") {
+        e.preventDefault();
+        const start = ce.selectionStart, end = ce.selectionEnd;
+        ce.value = ce.value.substring(0,start) + "  " + ce.value.substring(end);
+        ce.selectionStart = ce.selectionEnd = start + 2;
+        updateLineNums();
+      }
+    });
+    ce.addEventListener("input", updateLineNums);
+    ce.addEventListener("scroll", syncEditorScroll);
+  }
 }
 
 // ─── SW ───────────────────────────────────────────────────────────────────────
@@ -1157,10 +1220,18 @@ if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.se
 
 // ─── CODE EDITOR LINE NUMBERS ─────────────────────────────────────────────────
 function updateLineNums() {
-  const ta = document.getElementById("codeEditor");
+  const ta   = document.getElementById("codeEditor");
   const lnEl = document.getElementById("lineNums");
-  if (!ta || !lnEl) return;
-  const lines = ta.value.split("\n").length;
-  lnEl.textContent = Array.from({length:lines},(_,i)=>i+1).join("\n");
+  if(!ta || !lnEl) return;
+  const lines = (ta.value || "").split("\n").length || 1;
+  lnEl.textContent = Array.from({length:lines},(_,i)=>String(i+1)).join("\n");
+  // Sync scroll
   lnEl.scrollTop = ta.scrollTop;
+}
+
+// Sync line numbers scroll with textarea scroll
+function syncEditorScroll() {
+  const ta   = document.getElementById("codeEditor");
+  const lnEl = document.getElementById("lineNums");
+  if(ta && lnEl) lnEl.scrollTop = ta.scrollTop;
 }
