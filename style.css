@@ -881,3 +881,15 @@ textarea::placeholder{color:var(--tx3)}
   .nav-tab { min-height: 48px; padding: 8px 4px; }
   .nav-tab svg { width: 15px; height: 15px; }
 }
+
+
+/* ─── Code Preview iframe ─── */
+.code-preview-frame {
+  width: 100%;
+  min-height: 200px;
+  max-height: 320px;
+  border: none;
+  border-bottom: 1px solid rgba(198,168,92,.15);
+  background: #fff;
+  display: block;
+}
