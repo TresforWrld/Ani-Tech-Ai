@@ -118,7 +118,8 @@ const JB_HDR = { "Content-Type":"application/json", "X-Master-Key":JB_MASTER };
 async function dbInit() {
   dbSetStatus("syncing","Loading…");
   let attempts = 0;
-  while(attempts < 3) {
+    const maxAttempts = 5;
+    while(attempts < maxAttempts) {
     try {
       const res = await fetch(`${JB_BASE}/${FIXED_BIN}/latest`, {
         headers: JB_HDR,
@@ -145,12 +146,17 @@ async function dbInit() {
       attempts++;
       await new Promise(r => setTimeout(r, 800 * attempts));
     } catch(e) {
-      attempts++;
-      if(attempts >= 3) throw new Error("Cannot reach database. Check internet connection.");
+        attempts++;
+        console.error(`DB init attempt ${attempts} error:`, e.message);
+        if(attempts >= maxAttempts) {
+          dbSetStatus("err","DB offline");
+          throw new Error("Cannot reach database. Check internet connection.");
+        }
       await new Promise(r => setTimeout(r, 800 * attempts));
     }
   }
-  throw new Error("Database unavailable after 3 attempts.");
+  dbSetStatus("err","DB unavailable");
+    throw new Error("Database unavailable after " + maxAttempts + " attempts.");
 }
 
 async function dbSave() {
@@ -461,7 +467,7 @@ function boot(user) {
   document.getElementById("userAv").textContent=user.name.charAt(0).toUpperCase();
   // Show plan badge
   const planBadge=document.getElementById("planBadge");
-  if(planBadge){const p=getPlan(user);planBadge.textContent=`${p.badge} ${p.name}`;planBadge.style.color=p.color;}
+  if(planBadge){const p=getPlan(user);planBadge.textContent=`${p.badge} ${p.name}`;planBadge.style.color=p.color;planBadge.style.display="inline";}
   renderTrial(user);
   if(isAdmin(user)) document.getElementById("adminBtn")?.classList.remove("hidden");
   if(DB.adminNote){
@@ -697,18 +703,19 @@ function renderGlobalChat() {
   const msgs=(DB.globalChat||[]).slice(-50);
   if(!msgs.length){el.innerHTML=`<p style="text-align:center;color:var(--tx3);padding:20px;font-size:.82rem">No messages yet — say hello!</p>`;return;}
   el.innerHTML=msgs.map(m=>{
-    const isMe=m.uid===curUser?.uid;
+    const isMe=curUser && m.uid===curUser.uid;
     const badges=getUserBadges(m.uid).slice(0,2).map(k=>BADGES[k]?.icon||"").join("");
     return `<div class="gc-msg ${isMe?"gc-me":""}">
-      <div class="gc-meta"><span class="gc-name">${esc(m.name)}</span><span class="gc-badges">${badges}</span><span class="gc-time">${new Date(m.ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span></div>
-      <div class="gc-bubble">${esc(m.text)}</div>
+      <div class="gc-meta"><span class="gc-name">${esc(m.name||"Anonymous")}</span><span class="gc-badges">${badges}</span><span class="gc-time">${new Date(m.ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span></div>
+      <div class="gc-bubble">${esc(m.text||"")}</div>
     </div>`;
   }).join("");
   el.scrollTop=el.scrollHeight;
 }
 
 async function sendGlobalMsg() {
-  const inp=document.getElementById("gcInput"); if(!inp) return;
+  if(!curUser) { alert("Please login to send messages."); return; }
+    const inp=document.getElementById("gcInput"); if(!inp) return;
   const text=inp.value.trim(); if(!text) return;
   if(!DB.globalChat) DB.globalChat=[];
   DB.globalChat.push({uid:curUser.uid,name:curUser.name,plan:curUser.plan||"free",text,ts:new Date().toISOString()});
@@ -819,8 +826,10 @@ function initCodeEditor() {
 }
 
 function runCode() {
-  // Paid plans + admin only
-  if(!isPaid(curUser) && !isAdmin(curUser)) {
+    // Check login first
+    if(!curUser) { toast("Please login to run code.", "warn"); return; }
+    // Paid plans + admin only
+    if(!isPaid(curUser) && !isAdmin(curUser)) {
     toast("Code execution requires a paid plan (K25/month+). Tap Plans to upgrade.","warn");
     return;
   }
@@ -837,9 +846,14 @@ function runCode() {
       : code;
     if(preview) {
       preview.style.display = "block";
-      const doc = preview.contentDocument || preview.contentWindow.document;
+      try {
+          const doc = preview.contentDocument || preview.contentWindow.document;
       doc.open(); doc.write(htmlContent); doc.close();
-    }
+    } catch(e) {
+          console.error("Preview render error:", e);
+          output.textContent = "// Error rendering preview: " + e.message;
+        }
+      }
     output.textContent = `// ${lang.toUpperCase()} rendered in preview above`;
     return;
   }
@@ -1096,7 +1110,7 @@ async function send() {
       DB.users[curUser.uid].badges.push("power_user");
       scheduleSave(); toast("🔥 Badge unlocked: Power User!","ok");
     }
-  }catch(e){thinkEl.remove();const em="Error: "+e.message;myChats()[activeId].history.push({role:"assistant",text:em});renderAI(em,false);toast(e.message);console.error(e);}
+  }catch(e){thinkEl.remove();const em="Error: "+(e.message||"Something went wrong");myChats()[activeId].history.push({role:"assistant",text:em});renderAI(em,false);toast(e.message||"Request failed");console.error("Send error:",e);}
   finally{busy=false;document.getElementById("sendBtn").disabled=false;document.getElementById("inputTa").focus();}
 }
 
@@ -1141,7 +1155,8 @@ async function callGroq(history) {
       continue; // try next model for any error
     }
   }
-  throw new Error("Something went wrong. Please try again in a moment.");
+  console.error("All AI models failed. Last error:", lastErr);
+    throw new Error("AI service temporarily unavailable. Please try again in a moment.");
 }
 
 // ─── PWA INSTALL (no popup — sidebar button only) ─────────────────────────────
@@ -1211,7 +1226,8 @@ if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.se
     // DB loaded successfully — check if user exists
     if (DB.users[s.uid]) {
       const u = DB.users[s.uid];
-      boot({ uid:s.uid, name:u.name, email:u.email, trialStart:u.trialStart, prefs:u.prefs||{}, plan:u.plan||"free", isAdmin:s.isAdmin||false });
+      const isAdminUser = s.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() || s.isAdmin === true;
+        boot({ uid:s.uid, name:u.name, email:u.email, trialStart:u.trialStart, prefs:u.prefs||{}, plan:u.plan||"free", isAdmin:isAdminUser });
       return;
     }
     // User not in DB — clear stale session
