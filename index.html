@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0B1C2D"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Ani-Tech AI"/>
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <link rel="apple-touch-icon" href="https://i.imgur.com/9mjKZAj.jpeg"/>
+  <title>Ani-Tech AI — ANICADE Tech</title>
+  <meta name="description" content="Ani-Tech AI v4.5 — Official AI assistant by ANICADE Tech, Kabwe Zambia. Chat, code, generate images, voice calls."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ═══ AUTH OVERLAY ═══ -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-rings">
+    <div class="auth-ring"></div><div class="auth-ring"></div><div class="auth-ring"></div>
+  </div>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-ring">
+        <img class="auth-logo-img" src="https://i.imgur.com/9mjKZAj.jpeg" alt="ANICADE Tech"/>
+      </div>
+      <div>
+        <span class="auth-logo-name">ANI-TECH <span class="g-blue">AI</span></span>
+        <span class="auth-logo-sub">by ANICADE Tech · Kabwe, Zambia</span>
+      </div>
+    </div>
+    <div id="authLoading" class="auth-loading hidden">
+      <div class="spinner"></div><span>Connecting to ANICADE…</span>
+    </div>
+    <div id="authTabs" class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin"  onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab"        id="tabSignup" onclick="switchTab('signup')">Register</button>
+      <button class="auth-tab"        id="tabAdmin"  onclick="switchTab('admin')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;display:inline-block;vertical-align:-1px;margin-right:2px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Admin
+      </button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="formLogin" class="auth-form">
+      <p class="form-sub">Welcome back — sign in to continue</p>
+      <button class="faceid-btn" onclick="handleFaceLogin()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Sign in with Face ID / Biometrics
+      </button>
+      <div class="faceid-divider">or use password</div>
+      <div class="field"><label>Email</label><div class="field-inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 8.5 6a2.5 2.5 0 0 0 3 0L22 7"/></svg><input type="email" id="liEmail" placeholder="you@example.com" autocomplete="email"/></div></div>
+      <div class="field"><label>Password</label><div class="field-inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><input type="password" id="liPass" placeholder="••••••••" autocomplete="current-password"/><button type="button" class="eye-btn" onclick="togglePw('liPass',this)"><svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-hide hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div></div>
+      <div class="form-err hidden" id="liErr"></div>
+      <button class="form-btn" id="loginBtn" onclick="handleLogin()"><span>Sign In</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+      <p class="form-switch">No account? <a href="#" onclick="switchTab('signup');return false">Register free</a></p>
+    </div>
+
+    <!-- SIGNUP -->
+    <div id="formSignup" class="auth-form hidden">
+      <p class="form-sub">Create your free Ani-Tech AI account</p>
+      <div class="field"><label>Full Name</label><div class="field-inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><input type="text" id="suName" placeholder="Your name" autocomplete="name"/></div></div>
+      <div class="field"><label>Email</label><div class="field-inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 8.5 6a2.5 2.5 0 0 0 3 0L22 7"/></svg><input type="email" id="suEmail" placeholder="you@example.com" autocomplete="email"/></div></div>
+      <div class="field"><label>Password</label><div class="field-inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><input type="password" id="suPass" placeholder="Min. 6 characters" autocomplete="new-password"/><button type="button" class="eye-btn" onclick="togglePw('suPass',this)"><svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-hide hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div></div>
+      <div class="trial-info-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span><strong>Free plan included</strong> — upgrades from K25/month, K50/month, K100/month, and K200/month</span></div>
+      <div class="form-err hidden" id="suErr"></div>
+      <button class="form-btn" id="signupBtn" onclick="handleSignup()"><span>Create Account</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+      <p class="form-switch">Have an account? <a href="#" onclick="switchTab('login');return false">Sign in</a></p>
+    </div>
+
+    <!-- ADMIN -->
+    <div id="formAdmin" class="auth-form hidden">
+      <p class="form-sub">ANICADE Tech staff access only</p>
+      <div class="field"><label>Admin Email</label><div class="field-inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><input type="email" id="adEmail" placeholder="admin@anicadetech.xyz" autocomplete="off"/></div></div>
+      <div class="field"><label>Admin Password</label><div class="field-inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><input type="password" id="adPass" placeholder="••••••••" autocomplete="off"/><button type="button" class="eye-btn" onclick="togglePw('adPass',this)"><svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-hide hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div></div>
+      <div class="form-err hidden" id="adErr"></div>
+      <button class="form-btn admin-login-btn" id="adminLoginBtn" onclick="handleAdminLogin()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Admin Sign In</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ONBOARDING ═══ -->
+<div class="onboarding hidden" id="onboarding">
+  <div class="ob-card">
+    <div class="ob-logo"><div class="auth-logo-ring" style="width:44px;height:44px"><img class="auth-logo-img" src="https://i.imgur.com/9mjKZAj.jpeg" alt="ANICADE" style="width:32px;height:32px"/></div><div><span style="font-family:var(--head);font-size:.9rem;font-weight:900;color:var(--gold);letter-spacing:1px">Welcome, <span id="obName">there</span>!</span><span style="display:block;font-size:.62rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em;margin-top:2px;font-family:var(--font)">Personalise your AI</span></div></div>
+    <div class="ob-dots"><span class="ob-dot active"></span><span class="ob-dot"></span><span class="ob-dot"></span></div>
+    <div class="ob-step"><h3 class="ob-h">What are you interested in?</h3><p class="ob-sub">Select all that apply — your AI tunes itself to your world</p><div class="ob-chips ob-interests"><button class="ob-chip" data-v="coding" onclick="obToggleChip(this)">Coding</button><button class="ob-chip" data-v="web development" onclick="obToggleChip(this)">Web Dev</button><button class="ob-chip" data-v="mobile apps" onclick="obToggleChip(this)">Mobile</button><button class="ob-chip" data-v="AI and machine learning" onclick="obToggleChip(this)">AI / ML</button><button class="ob-chip" data-v="design and UI" onclick="obToggleChip(this)">Design</button><button class="ob-chip" data-v="business and startups" onclick="obToggleChip(this)">Business</button><button class="ob-chip" data-v="science and research" onclick="obToggleChip(this)">Science</button><button class="ob-chip" data-v="writing and content" onclick="obToggleChip(this)">Writing</button><button class="ob-chip" data-v="mathematics" onclick="obToggleChip(this)">Math</button><button class="ob-chip" data-v="photography" onclick="obToggleChip(this)">Photo</button><button class="ob-chip" data-v="art and creativity" onclick="obToggleChip(this)">Art</button><button class="ob-chip" data-v="gaming" onclick="obToggleChip(this)">Gaming</button></div><button class="ob-next" onclick="obStep(2)">Next <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></div>
+    <div class="ob-step hidden"><h3 class="ob-h">What do you need help with?</h3><p class="ob-sub">Your main use cases — the AI will focus here</p><div class="ob-chips ob-tasks"><button class="ob-chip" data-v="writing code and debugging" onclick="obToggleChip(this)">Code &amp; Debug</button><button class="ob-chip" data-v="explaining concepts" onclick="obToggleChip(this)">Explanations</button><button class="ob-chip" data-v="generating images" onclick="obToggleChip(this)">Images</button><button class="ob-chip" data-v="writing and editing text" onclick="obToggleChip(this)">Writing</button><button class="ob-chip" data-v="answering questions" onclick="obToggleChip(this)">Q&amp;A</button><button class="ob-chip" data-v="brainstorming ideas" onclick="obToggleChip(this)">Brainstorm</button><button class="ob-chip" data-v="research and analysis" onclick="obToggleChip(this)">Research</button><button class="ob-chip" data-v="translation" onclick="obToggleChip(this)">Translation</button><button class="ob-chip" data-v="math and calculations" onclick="obToggleChip(this)">Maths</button><button class="ob-chip" data-v="career and business advice" onclick="obToggleChip(this)">Career</button></div><div class="ob-nav"><button class="ob-back" onclick="obStep(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>Back</button><button class="ob-next" onclick="obStep(3)">Next <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></div></div>
+    <div class="ob-step hidden"><h3 class="ob-h">How should I respond?</h3><p class="ob-sub">Fine-tune AI style and tone to match you</p><div class="ob-selects"><div class="ob-select-group"><label>Response style</label><select id="obStyle"><option value="balanced">Balanced — detailed but clear</option><option value="brief and direct">Brief &amp; direct</option><option value="very detailed and thorough">Very detailed</option><option value="beginner-friendly and simple">Beginner-friendly</option><option value="expert-level technical">Expert-level</option><option value="creative and imaginative">Creative</option></select></div><div class="ob-select-group"><label>Tone</label><select id="obTone"><option value="professional">Professional</option><option value="casual and friendly">Casual &amp; friendly</option><option value="formal">Formal</option><option value="encouraging and positive">Encouraging</option><option value="no-nonsense and blunt">No-nonsense</option><option value="fun and witty">Fun &amp; witty</option></select></div></div><div class="ob-nav"><button class="ob-back" onclick="obStep(2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>Back</button><button class="ob-finish" onclick="finishOnboarding()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Get Started</button></div></div>
+    <button class="ob-skip" onclick="skipOnboarding()">Skip for now</button>
+  </div>
+</div>
+
+<!-- ═══ ADMIN PANEL ═══ -->
+<div class="admin-overlay hidden" id="adminOverlay">
+  <div class="admin-panel">
+    <div class="admin-header">
+      <div class="admin-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Admin Panel — ANICADE Tech</div>
+      <button class="admin-close" onclick="closeAdmin()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="admin-stats">
+      <div class="astat"><span class="astat-val" id="statUsers">–</span><span class="astat-lbl">Users</span></div>
+      <div class="astat"><span class="astat-val" id="statChats">–</span><span class="astat-lbl">Chats</span></div>
+      <div class="astat"><span class="astat-val" id="statMsgs">–</span><span class="astat-lbl">Messages</span></div>
+      <div class="astat"><span class="astat-val" id="statTrial">–</span><span class="astat-lbl">Paid Users</span></div>
+    </div>
+    <!-- Users -->
+    <div class="admin-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>All Users</div>
+    <div class="admin-table-wrap">
+      <table class="admin-table"><thead><tr><th>Name</th><th>Email</th><th>Plan</th><th>Joined</th><th>Chats</th><th>Badges</th><th>Status</th><th>Actions</th></tr></thead><tbody id="adminUsersBody"></tbody></table>
+    </div>
+    <!-- Pending Payments -->
+    <div class="admin-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Pending Payment Approvals</div>
+    <div class="admin-table-wrap" style="margin-bottom:20px">
+      <table class="admin-table"><thead><tr><th>Name</th><th>Email</th><th>Plan</th><th>Date</th><th>Method</th><th>Actions</th></tr></thead><tbody id="adminPaymentsBody"></tbody></table>
+    </div>
+    <!-- Note -->
+    <div class="admin-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9a16 16 0 0 0 6.29 6.29l.75-.75a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>System Announcement</div>
+    <div class="admin-broadcast"><textarea id="adminNote" placeholder="Message shown to all users on next load…" rows="3"></textarea><button class="admin-save-note" onclick="saveAdminNote()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Save</button></div>
+    <div class="admin-section-title danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>Danger Zone</div>
+    <div class="admin-danger-row">
+      <button class="admin-danger-btn" onclick="resetAllChats()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5"/></svg>Reset All Chats</button>
+      <button class="admin-safe-btn" onclick="adminExport()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Data</button>
+      <button class="admin-safe-btn" onclick="openAdmin()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5"/></svg>Refresh</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ RATING MODAL ═══ -->
+<div class="rate-overlay hidden" id="rateOverlay">
+  <div class="rate-card">
+    <p class="rate-title">Rate Ani-Tech AI</p>
+    <p class="rate-sub">Help ANICADE Tech improve — takes 30 seconds.</p>
+    <div class="rate-stars" id="rateStars">
+      <button class="rate-star" onclick="setRatingStar(1)" title="1 star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+      <button class="rate-star" onclick="setRatingStar(2)" title="2 stars"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+      <button class="rate-star" onclick="setRatingStar(3)" title="3 stars"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+      <button class="rate-star" onclick="setRatingStar(4)" title="4 stars"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+      <button class="rate-star" onclick="setRatingStar(5)" title="5 stars"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    </div>
+    <div class="rate-ux-row">
+      <div class="rate-ux-item"><label>Ease of use</label><select id="rateEase"><option value="">Select…</option><option value="very easy">Very easy</option><option value="easy">Easy</option><option value="neutral">Neutral</option><option value="difficult">Difficult</option></select></div>
+      <div class="rate-ux-item"><label>Feature satisfaction</label><select id="rateFeat"><option value="">Select…</option><option value="very satisfied">Very satisfied</option><option value="satisfied">Satisfied</option><option value="neutral">Neutral</option><option value="unsatisfied">Unsatisfied</option></select></div>
+    </div>
+    <textarea class="rate-textarea" id="rateComment" placeholder="Other feedback? (optional)" rows="3"></textarea>
+    <button class="rate-submit" id="rateSubmitBtn" onclick="submitRating()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;display:inline-block;vertical-align:-2px;margin-right:5px"><polyline points="20 6 9 17 4 12"/></svg>Submit Feedback</button>
+    <button class="rate-cancel" onclick="closeRating()">Cancel</button>
+  </div>
+</div>
+
+<!-- ═══ APP SHELL ═══ -->
+<div class="app hidden" id="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-header">
+      <div class="sb-logo">
+        <div class="sb-logo-ring"><img class="sb-logo-img" src="https://i.imgur.com/9mjKZAj.jpeg" alt="ANICADE"/></div>
+        <div><span class="sb-name">ANI-TECH <span class="g-blue">AI</span></span><span class="sb-by">by ANICADE Tech</span></div>
+      </div>
+    </div>
+
+    <!-- Nav tabs — compact 3-col icon grid -->
+    <nav class="sidebar-nav">
+      <button class="nav-tab active" data-view="chat" title="Chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Chat</span>
+      </button>
+      <button class="nav-tab" data-view="code" title="Code Editor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <span>Code</span>
+      </button>
+      <button class="nav-tab" data-view="global" title="Global Chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"/></svg>
+        <span>Global</span>
+      </button>
+      <button class="nav-tab" data-view="pricing" title="Plans &amp; Pricing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>Plans</span>
+      </button>
+      <button class="nav-tab" data-view="contact" title="Contact ANICADE Tech">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9a16 16 0 0 0 6.29 6.29l.75-.75a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <span>Contact</span>
+      </button>
+      <button class="nav-tab" data-view="legal" title="Legal &amp; Terms">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>Legal</span>
+      </button>
+    </nav>
+
+    <button class="new-btn" id="newChatBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Chat</button>
+    <div class="sb-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chats</div>
+    <div class="chat-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="chatSearchInput" placeholder="Search chats…" autocomplete="off"/>
+    </div>
+    <div class="chat-list" id="chatList"></div>
+
+    <div class="sb-foot">
+      <div class="sys-note hidden" id="sysNote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span id="sysNoteText"></span></div>
+      <div class="trial-banner" id="trialBanner"></div>
+      <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle theme">
+        <svg class="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="theme-icon-light hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+      <div class="user-row">
+        <div class="user-av" id="userAv">U</div>
+        <div class="user-info">
+          <span class="user-nm" id="userNm">User</span>
+          <span class="user-plan" id="userPlan">Free</span>
+        </div>
+
+        <button class="logout-btn" onclick="logout()" title="Sign out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+      </div>
+
+      <div class="db-status syncing" id="dbStatus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg><span id="dbStatusText">Connecting…</span></div>
+    </div>
+  </aside>
+
+  <button class="menu-btn" id="menuBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="main">
+    <header class="topbar">
+      <span class="chat-title" id="chatTitle">Ani-Tech AI</span>
+      <div class="topbar-right">
+        <button class="rate-btn hidden" id="rateBtn" title="Rate">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Rate</span>
+        </button>
+        <button class="admin-btn hidden" id="adminBtn" onclick="openAdmin()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Admin
+        </button>
+        <div class="live-badge"><span class="live-dot"></span><span>Live</span></div>
+      </div>
+    </header>
+
+    <!-- ── VIEW: CHAT ── -->
+    <div id="view-chat" class="view-panel">
+      <section class="chat-area" id="chatArea">
+        <div class="welcome" id="welcome">
+          <div class="welcome-logo-ring"><img class="welcome-logo-img" src="https://i.imgur.com/9mjKZAj.jpeg" alt="ANICADE Tech"/></div>
+          <p class="welcome-eyebrow">ANICADE Tech · Kabwe, Zambia</p>
+          <h1>Ani-Tech <span class="g-blue">AI</span></h1>
+          <p>Your intelligent assistant by <a href="https://www.anicadetech.xyz" target="_blank" class="brand-link">ANICADE Tech</a>. Code, create, learn, and explore.</p>
+          <div class="suggestions">
+            <button class="sug" data-q="Write a full React component with hooks for a todo app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span>React todo app</span></button>
+            <button class="sug" data-q="Generate an image of a futuristic city at night with neon lights"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Generate an image</span></button>
+            <button class="sug" data-q="Explain async/await in JavaScript with full code examples"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>async/await JS</span></button>
+            <button class="sug" data-q="Write a Python FastAPI REST API with JWT auth and CRUD endpoints"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"/></svg><span>FastAPI + JWT</span></button>
+            <button class="sug" data-q="What services does ANICADE Tech offer in Zambia?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>ANICADE services</span></button>
+            <button class="sug" data-q="Help me write a professional client email about a project delay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span>Professional email</span></button>
+          </div>
+        </div>
+        <div class="messages" id="messages"></div>
+        <div class="typing-indicator hidden" id="typingIndicator">
+          <div class="av ai"><img src="https://i.imgur.com/9mjKZAj.jpeg" alt="AI" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
+          <div class="typing-dots"><span></span><span></span><span></span></div>
+          <span class="typing-text">Ani-Tech AI is typing</span>
+        </div>
+      </section>
+      <div class="input-area">
+        <div class="input-box">
+          <textarea id="inputTa" placeholder="Ask Ani-Tech AI anything…" rows="1"></textarea>
+          <button class="mic-btn" id="micBtn" title="Tap to speak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+          <button class="voice-call-btn" id="voiceCallBtn" title="Voice call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9a16 16 0 0 0 6.29 6.29l.75-.75a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+          <button class="send-btn" id="sendBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+        </div>
+        <p class="input-note">Powered by <a href="https://www.anicadetech.xyz" target="_blank" class="note-link">ANICADE Tech</a> · Ani-Tech AI v4.5</p>
+      </div>
+    </div>
+
+    <!-- ── VIEW: CODE EDITOR ── -->
+    <div id="view-code" class="view-panel hidden">
+      <div class="code-editor-wrap">
+        <div class="code-editor-header">
+          <div class="code-editor-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Code Editor
+          </div>
+          <div class="code-editor-controls">
+            <select id="codeLang" class="code-lang-select">
+              <option value="javascript">JavaScript</option>
+              <option value="python">Python</option>
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+              <option value="typescript">TypeScript</option>
+              <option value="java">Java</option>
+              <option value="cpp">C++</option>
+              <option value="php">PHP</option>
+              <option value="sql">SQL</option>
+              <option value="bash">Bash</option>
+            </select>
+            <button class="code-btn run" onclick="runCode()">Run</button>
+            <button class="code-btn copy" onclick="copyCode()">Copy</button>
+            <button class="code-btn ai" onclick="aiHelpCode()">AI Help</button>
+            <button class="code-btn clear" onclick="clearCode()">Clear</button>
+          </div>
+        </div>
+        <div class="code-editor-body">
+          <div class="code-editor-main">
+            <div class="code-line-nums" id="lineNums">1</div>
+            <textarea id="codeEditor" class="code-textarea" spellcheck="false" onscroll="syncEditorScroll()" placeholder="// Enter your code here…
+// Click Run to execute  |  Click AI Help to ask the AI about your code
+// Supports: JavaScript (live), Python, HTML, CSS and more" oninput="updateLineNums()"></textarea>
+          </div>
+          <div class="code-output-panel">
+            <div class="code-output-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+              Output Console
+            </div>
+            <!-- HTML/CSS Preview iframe -->
+            <iframe id="codePreview" class="code-preview-frame" style="display:none"
+              sandbox="allow-scripts allow-same-origin"
+              title="HTML/CSS Preview"></iframe>
+            <pre id="codeOutput" class="code-output">// Output appears here after running code</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VIEW: GLOBAL CHAT ── -->
+    <div id="view-global" class="view-panel hidden">
+      <div class="global-chat-wrap">
+        <div class="global-chat-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"/></svg>
+          Global Chat — All ANICADE Tech Users
+          <span class="live-badge" style="margin-left:auto"><span class="live-dot"></span>Live</span>
+        </div>
+        <div class="global-chat-messages" id="globalChatMessages"></div>
+        <div class="global-chat-input">
+          <input type="text" id="gcInput" placeholder="Say hello to the community…" maxlength="280"/>
+          <button id="gcSendBtn" class="send-btn" style="flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VIEW: PRICING ── -->
+    <div id="view-pricing" class="view-panel hidden">
+      <div class="pricing-wrap">
+        <div class="pricing-header">
+          <h2>Subscription Plans</h2>
+          <p>by ANICADE Tech · Kabwe, Zambia · All prices in Zambian Kwacha</p>
+        </div>
+        <div class="pricing-cards" id="pricingCards"></div>
+        <div class="pricing-footer">
+          <p>Pay via MTN Mobile Money, Airtel Money, Bank Transfer or WhatsApp</p>
+          <p><a href="https://wa.me/260777083995" target="_blank">WhatsApp: +260 777 083 995</a> — to arrange payment</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VIEW: CONTACT ── -->
+    <div id="view-contact" class="view-panel hidden">
+      <div class="info-wrap"><div id="contactContent"></div></div>
+    </div>
+
+    <!-- ── VIEW: LEGAL ── -->
+    <div id="view-legal" class="view-panel hidden">
+      <div class="info-wrap"><div id="legalContent"></div></div>
+    </div>
+
+    <footer class="footer">
+      <span>© 2026 <a href="https://www.anicadetech.xyz" target="_blank" class="footer-link">ANICADE Tech</a></span>
+      <span class="fsep">·</span><span>CEO: Tresfor Wrld</span>
+      <span class="fsep">·</span><span>Kabwe, Zambia</span>
+      <span class="fsep">·</span><span>Ani-Tech AI v4.5</span>
+    </footer>
+  </main>
+</div>
+
+<!-- ═══ VOICE OVERLAY ═══ -->
+<div class="voice-overlay hidden" id="voiceOverlay">
+  <div class="voice-card">
+    <div class="voice-rings"><div class="vring"></div><div class="vring r2"></div><img class="voice-logo-img" src="https://i.imgur.com/9mjKZAj.jpeg" alt="Ani-Tech AI"/></div>
+    <p class="voice-title">Voice Mode Active</p>
+    <p class="voice-timer" id="voiceTimer">00:00</p>
+    <p class="voice-status" id="voiceStatus">Listening…</p>
+    <p class="voice-transcript" id="voiceTranscript">Say something when the ring glows.</p>
+    <div class="voice-visualizer" id="voiceVisualizer">
+      <span class="vbar"></span><span class="vbar"></span><span class="vbar"></span><span class="vbar"></span><span class="vbar"></span>
+      <span class="vbar"></span><span class="vbar"></span><span class="vbar"></span><span class="vbar"></span>
+    </div>
+    <button class="voice-end-btn" id="stopVoiceBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>End Call</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
