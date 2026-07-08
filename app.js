@@ -1630,16 +1630,29 @@ async function readAIError(res) {
   if(!raw) return `AI request failed (${res.status})`;
   try {
     const json = JSON.parse(raw);
-    return json.error?.message || json.message || raw.slice(0, 240);
+    // xAI sometimes returns {"code":"invalid-argument","error":"..."} where
+    // error is a plain string rather than {message:"..."} — handle both shapes.
+    const errField = typeof json.error === "string" ? json.error : json.error?.message;
+    return errField || json.message || raw.slice(0, 240);
   } catch {
     return raw.slice(0, 240);
   }
 }
 
+function isAuthError(status, detail="") {
+  const msg = String(detail || "").toLowerCase();
+  // xAI normally uses 401/403 for auth problems, but sometimes returns a
+  // 400 with an "invalid-argument" code and an "Incorrect API key" message —
+  // treat that the same as a real auth failure so key rotation kicks in.
+  if (status === 401 || status === 403) return true;
+  if (msg.includes("api key") || msg.includes("apikey") || msg.includes("invalid-argument") || msg.includes("unauthorized")) return true;
+  return false;
+}
+
 function friendlyAIError(status, detail="") {
   const msg = String(detail || "").toLowerCase();
   console.warn("AI error detail:", status, detail);
-  if(status === 401 || status === 403) return "Ani-Tech AI is temporarily unavailable. Our team has been notified — please try again shortly.";
+  if(isAuthError(status, detail)) return "Ani-Tech AI is temporarily unavailable. Our team has been notified — please try again shortly.";
   if(status === 402 || msg.includes("quota") || msg.includes("credit") || msg.includes("billing")) return "Ani-Tech AI is at capacity right now. Please try again in a few minutes, or contact ANICADE Tech if this continues.";
   if(status === 429) return "AI is busy right now. Trying another model...";
   if(status === 404 || msg.includes("model")) return "Switching to another AI model...";
@@ -1716,7 +1729,7 @@ async function tryModelWithKey(model, messages, keyIndex, maxRetries = 2) {
         const detail = await readAIError(res);
         const err = Object.assign(new Error(friendlyAIError(res.status, detail)), {status:res.status});
         // Auth/billing errors on THIS key — worth trying the next key before giving up
-        if (res.status===401||res.status===403||res.status===402) { err.fatal = true; err.authFailure = true; throw err; }
+        if (isAuthError(res.status, detail) || res.status===402) { err.fatal = true; err.authFailure = true; throw err; }
         // Bad/unavailable model — no point retrying this one
         if (res.status===404) { err.skipModel = true; throw err; }
         throw err;
@@ -1730,7 +1743,7 @@ async function tryModelWithKey(model, messages, keyIndex, maxRetries = 2) {
       if (!res2.ok) {
         const detail = await readAIError(res2);
         const err = Object.assign(new Error(friendlyAIError(res2.status, detail)), {status:res2.status});
-        if (res2.status===401||res2.status===403||res2.status===402) { err.fatal = true; err.authFailure = true; }
+        if (isAuthError(res2.status, detail) || res2.status===402) { err.fatal = true; err.authFailure = true; }
         throw err;
       }
       const text2 = await parseAIResponse(res2);
