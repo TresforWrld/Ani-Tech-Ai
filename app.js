@@ -22,8 +22,14 @@
  */
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-// AI: xAI Grok (primary) — user's active API key
-const AI_KEY   = "xai-RKGHkeWsiWbfzTdsJwnFTL7qNwqmGbSonHaKUREMOMZ44I2avLKpViqMhHhhctXKYqkxVlEMBWVknvcI";
+// AI: xAI Grok (primary). Two keys — if one gets rate-limited/banned, the app
+// automatically falls back to the other. NOTE: both keys are visible to
+// anyone who views this public file's source — see chat for why that's an
+// unavoidable tradeoff of putting keys in client-side code on a public repo.
+const AI_KEYS = [
+  "xai-BQUIBGuAXsY6wpntfvlWYy0O8B9sDtNz5VHGgSgDK8yxHrKlzYJbBXEBNE8NWrO2seso5WIDnFb9fqps",
+  "xai-LBqipPPJyAbjrE02anh68d95iw7STryu1KEplU7aHzCq9fnhvSO2bc5x3arn7jFcMZg8x2ZTs5rfW36i",
+];
 const AI_URL   = "https://api.x.ai/v1/chat/completions";
 // Model list — try in order, skip on 429 rate limit
 const AI_MODELS = [
@@ -1562,13 +1568,13 @@ function friendlyAIError(status, detail="") {
   return "AI request failed. Please try again.";
 }
 
-async function fetchAI(model, messages, stream) {
+async function fetchAI(model, messages, stream, keyIndex = 0) {
   const controller = new AbortController();
   const timer = setTimeout(()=>controller.abort(), stream ? 65000 : 45000);
   try {
     return await fetch(AI_URL, {
       method: "POST",
-      headers: { "Content-Type":"application/json", "Authorization":`Bearer ${AI_KEY}` },
+      headers: { "Content-Type":"application/json", "Authorization":`Bearer ${AI_KEYS[keyIndex]}` },
       signal: controller.signal,
       body: JSON.stringify({ model, messages, temperature:0.7, max_tokens:2048, stream })
     });
@@ -1610,12 +1616,31 @@ async function parseAIResponse(res) {
 
 // Attempt a single model, retrying transient failures (network/429/5xx) up to
 // `maxRetries` times with capped exponential backoff before giving up on it.
+// Also rotates through AI_KEYS on auth (401/403) or persistent 429 errors —
+// so a banned/rate-limited key doesn't take the whole app down.
 async function tryModel(model, messages, maxRetries = 2) {
+  let lastErr = null;
+  for (let keyIndex = 0; keyIndex < AI_KEYS.length; keyIndex++) {
+    try {
+      return await tryModelWithKey(model, messages, keyIndex, maxRetries);
+    } catch (e) {
+      lastErr = e;
+      // Only rotate keys for errors a different key could actually fix.
+      const keyIssue = e?.status === 401 || e?.status === 403 || e?.status === 429;
+      if (!keyIssue) throw e; // 404/empty-response/etc — a different key won't help
+      if (keyIndex < AI_KEYS.length - 1) continue; // try next key
+      throw e; // out of keys
+    }
+  }
+  throw lastErr;
+}
+
+async function tryModelWithKey(model, messages, keyIndex, maxRetries = 2) {
   const MAX_BACKOFF = 6000;
   let backoff = 700;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      let res = await fetchAI(model, messages, true);
+      let res = await fetchAI(model, messages, true, keyIndex);
 
       if (res.status === 429 || res.status >= 500) {
         if (attempt < maxRetries) {
@@ -1630,7 +1655,8 @@ async function tryModel(model, messages, maxRetries = 2) {
       if (!res.ok) {
         const detail = await readAIError(res);
         const err = Object.assign(new Error(friendlyAIError(res.status, detail)), {status:res.status});
-        // Auth/billing errors are not fixable by retrying or switching models
+        // Auth/billing errors on THIS key are not fixable by retrying it —
+        // but tryModel() above will try the next key before giving up.
         if (res.status===401||res.status===403||res.status===402) { err.fatal = true; throw err; }
         // Bad/unavailable model — no point retrying this one
         if (res.status===404) { err.skipModel = true; throw err; }
@@ -1641,7 +1667,7 @@ async function tryModel(model, messages, maxRetries = 2) {
       if (text) return text;
 
       // Empty stream — one non-streaming fallback attempt before giving up on this model
-      const res2 = await fetchAI(model, messages, false);
+      const res2 = await fetchAI(model, messages, false, keyIndex);
       if (!res2.ok) {
         const detail = await readAIError(res2);
         const err = Object.assign(new Error(friendlyAIError(res2.status, detail)), {status:res2.status});
