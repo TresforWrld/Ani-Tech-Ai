@@ -74,6 +74,14 @@ const BADGES = {
 };
 
 // ─── SYSTEM PROMPT ────────────────────────────────────────────────────────────
+function getTimeContext() {
+  const now = new Date();
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  const dateStr = now.toLocaleDateString("en-US", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+  const timeStr = now.toLocaleTimeString("en-US", { hour:"2-digit", minute:"2-digit", timeZoneName:"short" });
+  return `${dateStr}, ${timeStr} (timezone: ${tz})`;
+}
+
 function buildSystem(user, isVoiceMode = false) {
   const prefs     = user.prefs||{};
   const interests = (prefs.interests||[]).join(", ")||"general topics";
@@ -86,6 +94,8 @@ function buildSystem(user, isVoiceMode = false) {
   let prompt = `You are Ani-Tech AI — the official AI assistant of ANICADE Tech, built in 2026.
 Website: https://www.anicadetech.xyz
 Services: web dev (React/Next.js), mobile apps, AI/ML, UI/UX, DevOps, tech consulting
+
+CURRENT DATE & TIME: ${getTimeContext()}. Always use this as "now" — never assume an earlier date from training. If asked about "today", "this week", someone's age, or time until/since an event, calculate from this real timestamp.
 
 USER: ${user.name} | Plan: ${planName} | Interests: ${interests} | Tasks: ${tasks}
 → Style: ${style} | Tone: ${tone}. Tailor ALL responses precisely to these preferences.
@@ -125,6 +135,7 @@ let voiceMode   = false;
 let voiceSettings = { voiceURI:null, rate:0.92, pitch:1.02, lang:"en-US", autoSpeak:false, character:"ani" };
 let recognition = null;
 let recognitionActive = false;
+let _currentAudioEl = null; // currently-playing Pollinations TTS clip, if any
 let voiceRestartTimer = null;
 let voiceAwaitingSend = false;
 let ratingStars = 0;
@@ -1213,6 +1224,16 @@ function loadBestVoice() {
 
 function stopTTS() {
   window.speechSynthesis?.cancel();
+  if (_currentAudioEl) {
+    try { _currentAudioEl.pause(); _currentAudioEl.src = ""; } catch {}
+    _currentAudioEl = null;
+  }
+}
+
+// True while Ani-Tech AI is speaking, whether via the online Pollinations
+// voice (an <audio> clip) or the offline speechSynthesis fallback.
+function isSpeaking() {
+  return !!(window.speechSynthesis?.speaking || (_currentAudioEl && !_currentAudioEl.paused && !_currentAudioEl.ended));
 }
 
 function clearVoiceRestart() {
@@ -1228,7 +1249,7 @@ function startRecognitionSafe(delay = 0) {
   voiceRestartTimer = setTimeout(() => {
     voiceRestartTimer = null;
     if (!recognition || recognitionActive) return;
-    if (voiceMode && (busy || window.speechSynthesis?.speaking)) return;
+    if (voiceMode && (busy || isSpeaking())) return;
     try {
       recognition.start();
     } catch(e) {
@@ -1248,7 +1269,7 @@ function stopRecognitionSafe() {
 function speakText(btn) {
   const text=(btn.dataset.text||"").replace(/\\n/g," ").trim();
   if(!text){toast("Nothing to read","warn");return;}
-  const playing = window.speechSynthesis?.speaking;
+  const playing = isSpeaking();
   if(playing){
     stopTTS();
     btn.classList.remove("speaking");
@@ -1258,41 +1279,50 @@ function speakText(btn) {
   speakOut(text,btn);
 }
 
-function speakOut(text, btn=null) {
-  stopTTS();
-  const synth = window.speechSynthesis;
-  if (!synth) {
-    if (voiceMode) startRecognitionSafe(100);
-    return;
+// Real, named TTS voices (alloy/nova/onyx/sage/shimmer) via Pollinations'
+// keyless audio endpoint — far more natural than the robotic default
+// browser voices used before. Falls back to the browser's speechSynthesis
+// automatically if the online voice fails to load (offline, blocked, etc).
+const POLLY_VOICE_MAP = { ani:"alloy", nova:"nova", max:"onyx", sage:"sage", pixel:"shimmer" };
+
+// Strips markdown/code down to natural spoken prose. Code (fenced blocks AND
+// inline `spans`) is dropped entirely rather than read aloud — hearing raw
+// syntax read out loud is exactly what was reported as "reading source
+// code" — and a short natural note is appended so the person knows code is
+// waiting for them on screen instead of just going quiet.
+function stripForSpeech(text) {
+  let hadCode = false;
+  let clean = String(text || "")
+    .replace(/```[\s\S]*?```/g, () => { hadCode = true; return " "; })
+    .replace(/~~~[\s\S]*?~~~/g, () => { hadCode = true; return " "; })
+    .replace(/`[^`]*`/g, () => { hadCode = true; return " "; })
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\[IMAGE:.*?\]/gi, " an image ")
+    .replace(/\[SUGGESTIONS:.*?\]/gi, "")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^>\s?/gm, "")
+    .replace(/^[-*+]\s+/gm, "")
+    .replace(/^\d+\.\s+/gm, "")
+    .replace(/[*_]{1,3}/g, "")
+    .replace(/\|/g, " ")
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/\n+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  if (hadCode) {
+    clean = clean ? `${clean} I've also put some code on your screen for that.`
+                  : "I've shared some code on your screen for that.";
   }
+  return clean.slice(0, 3000);
+}
 
-  const clean = text.replace(/```[\s\S]*?```/g," code block ").replace(/\[IMAGE:.*?\]/gi," image ").replace(/\[SUGGESTIONS:.*?\]/gi,"").replace(/#{1,6} /g,"").replace(/[*_`]/g,"").replace(/https?:\/\/\S+/g," link ").replace(/\n+/g," ").trim().slice(0,3000);
-
-  const onEnd = () => {
-    if(btn){
-      btn.classList.remove("speaking");
-      btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>Speak`;
-    }
-    // If voice mode, auto-restart listening after speaking
-    if (voiceMode && recognition && !busy) {
-      setVoiceStatus("listening");
-      startRecognitionSafe(350);
-    }
-  };
-
-  if(btn){
-    btn.classList.add("speaking");
-    btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>Stop`;
-  }
-
-  if (voiceMode) setVoiceStatus("speaking");
-
-  // Chunk-based speaking for long texts (avoids cutoffs)
-  const sentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
+function chunkForSpeech(text, maxLen = 260) {
+  const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
   const chunks = [];
   let current = "";
   for (const s of sentences) {
-    if ((current + s).length > 200) {
+    if ((current + s).length > maxLen) {
       if (current) chunks.push(current.trim());
       current = s;
     } else {
@@ -1300,32 +1330,85 @@ function speakOut(text, btn=null) {
     }
   }
   if (current.trim()) chunks.push(current.trim());
+  return chunks;
+}
 
-  let chunkIndex = 0;
-  function speakChunk() {
-    if (chunkIndex >= chunks.length) { onEnd(); return; }
-    const utt = new SpeechSynthesisUtterance(chunks[chunkIndex]);
-    utt.rate = voiceSettings.rate;
-    utt.pitch = voiceSettings.pitch;
-    utt.volume = 1;
-    if (_bestVoice) utt.voice = _bestVoice;
-    utt.onend = () => { chunkIndex++; speakChunk(); };
-    utt.onerror = () => { chunkIndex++; speakChunk(); };
-    synth.speak(utt);
+function playViaPollinations(text, voiceName, onDone, onError) {
+  try {
+    const base = AI_URL.replace(/\/openai$/, "");
+    const url = `${base}/${encodeURIComponent(text)}?model=openai-audio&voice=${encodeURIComponent(voiceName)}`;
+    const audio = new Audio(url);
+    audio.playbackRate = voiceSettings.rate || 1;
+    _currentAudioEl = audio;
+    let settled = false;
+    const finish = (fn) => { if (settled) return; settled = true; clearTimeout(guard); fn(); };
+    const guard = setTimeout(() => finish(onError), 12000);
+    audio.onended = () => finish(onDone);
+    audio.onerror = () => finish(onError);
+    audio.play().catch(() => finish(onError));
+  } catch { onError(); }
+}
+
+function playViaSynth(text, onDone) {
+  const synth = window.speechSynthesis;
+  if (!synth) { onDone(); return; }
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate = voiceSettings.rate;
+  utt.pitch = voiceSettings.pitch;
+  utt.volume = 1;
+  const preferred = voiceSettings.voiceURI && synth.getVoices().find(v => v.voiceURI === voiceSettings.voiceURI);
+  utt.voice = preferred || _bestVoice || null;
+  utt.onend = onDone;
+  utt.onerror = onDone;
+  synth.speak(utt);
+}
+
+function speakOut(text, btn = null) {
+  stopTTS();
+  if (!_voicesLoaded) loadBestVoice();
+
+  const clean = stripForSpeech(text);
+  if (!clean) {
+    if (voiceMode && recognition && !busy) { setVoiceStatus("listening"); startRecognitionSafe(200); }
+    return;
   }
 
-  if (!_voicesLoaded) {
-    loadBestVoice();
-    if (!_voicesLoaded) {
-      synth.onvoiceschanged = () => {
-        synth.onvoiceschanged = null;
-        loadBestVoice();
-        speakChunk();
-      };
-      return;
+  const onEnd = () => {
+    if (btn) {
+      btn.classList.remove("speaking");
+      btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>Speak`;
+    }
+    if (voiceMode && recognition && !busy) {
+      setVoiceStatus("listening");
+      startRecognitionSafe(350);
+    }
+  };
+
+  if (btn) {
+    btn.classList.add("speaking");
+    btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>Stop`;
+  }
+
+  if (voiceMode) setVoiceStatus("speaking");
+
+  const chunks = chunkForSpeech(clean);
+  const voiceName = POLLY_VOICE_MAP[voiceSettings.character] || "alloy";
+  let chunkIndex = 0;
+  let useFallback = false;
+
+  function speakNext() {
+    if (chunkIndex >= chunks.length) { onEnd(); return; }
+    const chunkText = chunks[chunkIndex];
+    if (!useFallback) {
+      playViaPollinations(chunkText, voiceName,
+        () => { chunkIndex++; speakNext(); },
+        () => { useFallback = true; speakNext(); } // online voice failed — retry this chunk offline
+      );
+    } else {
+      playViaSynth(chunkText, () => { chunkIndex++; speakNext(); });
     }
   }
-  speakChunk();
+  speakNext();
 }
 
 // ─── VOICE INPUT & CALL ───────────────────────────────────────────────────────
@@ -1355,7 +1438,7 @@ function initVoice() {
   recognition.onend=()=>{
     recognitionActive = false;
     document.getElementById("micBtn")?.classList.remove("listening");
-    if(voiceMode&&!busy&&!voiceAwaitingSend&&!window.speechSynthesis?.speaking) {
+    if(voiceMode&&!busy&&!voiceAwaitingSend&&!isSpeaking()) {
       setVoiceStatus("listening");
       startRecognitionSafe(500);
     }
@@ -1390,12 +1473,71 @@ function tapSpeak(){
   startRecognitionSafe();
 }
 
+// ─── BACKGROUND CALL SUPPORT ────────────────────────────────────────────────
+// Two real, non-hacky mitigations: (1) Screen Wake Lock keeps the screen
+// from locking during a call, which is the #1 cause of a call dying when
+// the person's phone goes to sleep in their pocket; (2) Media Session
+// exposes the call to the OS's lock-screen/notification media controls so
+// the browser treats it as active media rather than an idle background tab,
+// which materially reduces (but on some mobile browsers cannot fully
+// eliminate) JS/mic throttling once the tab itself is backgrounded.
+let _wakeLock = null;
+
+async function acquireWakeLock() {
+  try {
+    if ("wakeLock" in navigator) {
+      _wakeLock = await navigator.wakeLock.request("screen");
+      _wakeLock.addEventListener("release", () => { _wakeLock = null; });
+    }
+  } catch {} // unsupported or denied — call still works, just won't hold the screen awake
+}
+
+function releaseWakeLock() {
+  try { _wakeLock?.release(); } catch {}
+  _wakeLock = null;
+}
+
+function setupMediaSession() {
+  if (!("mediaSession" in navigator)) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: "Ani-Tech AI — Voice Call",
+      artist: "ANICADE Tech",
+      album: "Live call"
+    });
+    navigator.mediaSession.playbackState = "playing";
+    navigator.mediaSession.setActionHandler("pause", () => stopVoiceCall());
+    navigator.mediaSession.setActionHandler("stop", () => stopVoiceCall());
+  } catch {}
+}
+
+function teardownMediaSession() {
+  if (!("mediaSession" in navigator)) return;
+  try {
+    navigator.mediaSession.playbackState = "none";
+    navigator.mediaSession.metadata = null;
+    navigator.mediaSession.setActionHandler("pause", null);
+    navigator.mediaSession.setActionHandler("stop", null);
+  } catch {}
+}
+
+// Wake locks are auto-released by the browser whenever the tab is hidden —
+// re-acquire the moment the person comes back so a still-active call keeps
+// the screen awake again instead of staying released for the rest of it.
+document.addEventListener("visibilitychange", () => {
+  if (voiceMode && document.visibilityState === "visible" && !_wakeLock) {
+    acquireWakeLock();
+  }
+});
+
 function startVoiceCall(){
   if(!recognition){toast("Voice not supported.","err");return;}
   voiceMode=true;
   document.getElementById("voiceCallBtn")?.classList.add("active");
   document.getElementById("voiceOverlay")?.classList.remove("hidden");
   stopTTS();
+  acquireWakeLock();
+  setupMediaSession();
 
   // Start call timer
   voiceStartTime = Date.now();
@@ -1414,6 +1556,8 @@ function stopVoiceCall(){
   voiceAwaitingSend=false;
   stopRecognitionSafe();
   stopTTS();
+  releaseWakeLock();
+  teardownMediaSession();
   document.getElementById("voiceCallBtn")?.classList.remove("active");
   document.getElementById("voiceOverlay")?.classList.add("hidden");
 
@@ -1577,12 +1721,69 @@ function testVoiceSettings() {
 }
 
 // ─── WEB SEARCH ───────────────────────────────────────────────────────────────
-async function webSearch(query) {
-  try{const q=encodeURIComponent(query),url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.duckduckgo.com/?q=${q}&format=json&no_html=1&skip_disambig=1`)}`;const res=await fetch(url,{signal:AbortSignal.timeout(5000)});if(!res.ok)return null;const w=await res.json();const data=JSON.parse(w.contents||"{}");const results=[];if(data.AbstractText)results.push(data.AbstractText);(data.RelatedTopics||[]).slice(0,4).forEach(t=>{if(t.Text)results.push(t.Text);});return results.length?results.join("\n\n"):null;}catch{return null;}
+// Scrape DuckDuckGo's plain HTML results page (no key, no rate-limit auth)
+// via a CORS proxy, extracting real result titles + snippets. Falls back to
+// the old Instant-Answer API if scraping comes up empty (DDG's markup can
+// change, or the proxy can hiccup) — better a weak answer than none.
+async function scrapeSearchResults(query) {
+  const q = encodeURIComponent(query);
+  const target = `https://html.duckduckgo.com/html/?q=${q}`;
+  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`;
+  const res = await fetch(proxyUrl, {signal: AbortSignal.timeout(6000)});
+  if (!res.ok) return null;
+  const html = await res.text();
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const titles = [...doc.querySelectorAll(".result__title, .result__a")];
+  const snippets = [...doc.querySelectorAll(".result__snippet")];
+  const out = [];
+  const seen = new Set();
+  for (let i = 0; i < titles.length && out.length < 5; i++) {
+    const title = titles[i].textContent.trim();
+    const snippet = (snippets[i]?.textContent || "").trim();
+    if (!title || seen.has(title)) continue;
+    seen.add(title);
+    out.push(snippet ? `${title} — ${snippet}` : title);
+  }
+  return out.length ? out.join("\n") : null;
 }
-function needsSearch(text){
+
+async function instantAnswerFallback(query) {
+  try {
+    const q = encodeURIComponent(query);
+    const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.duckduckgo.com/?q=${q}&format=json&no_html=1&skip_disambig=1`)}`;
+    const res = await fetch(url, {signal: AbortSignal.timeout(5000)});
+    if (!res.ok) return null;
+    const w = await res.json();
+    const data = JSON.parse(w.contents || "{}");
+    const results = [];
+    if (data.AbstractText) results.push(data.AbstractText);
+    (data.RelatedTopics || []).slice(0, 4).forEach(t => { if (t.Text) results.push(t.Text); });
+    return results.length ? results.join("\n\n") : null;
+  } catch { return null; }
+}
+
+async function webSearch(query) {
+  try {
+    const scraped = await scrapeSearchResults(query);
+    if (scraped) return scraped;
+  } catch {}
+  try {
+    return await instantAnswerFallback(query);
+  } catch {
+    return null;
+  }
+}
+
+// Broad trigger — anything that plausibly needs information newer than the
+// model's training, or explicitly asks to search/look something up. Errs
+// toward searching more often rather than missing real queries; a wasted
+// search costs a little latency, a missed one gives a wrong/stale answer.
+function needsSearch(text) {
   const t = text.toLowerCase();
-  return ["latest news","current price","today's","who is the current","what happened","price of","weather in","weather today","stock price","exchange rate","trending now"].some(k=>t.includes(k));
+  const explicit = /\b(search|google|look ?up|find (out|info|information)|check online|browse|latest|breaking|recent(ly)?|right now|as of (today|now)|this (week|month|year))\b/;
+  const timeSensitive = /\b(today'?s?|current(ly)?|now|price of|stock price|exchange rate|weather|score|match result|election|news about|who is the (current|new)|what happened|trending|release date|when (is|does|did)|how (much|many) (is|are|does))\b/;
+  const namedEntityLookup = /\b(who is|what is|where is|when was|tell me about)\b.{0,60}\b(2025|2026|latest|new|current)\b/;
+  return explicit.test(t) || timeSensitive.test(t) || namedEntityLookup.test(t);
 }
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
@@ -1640,7 +1841,7 @@ async function runAITurn() {
     busy=false;
     document.getElementById("sendBtn").disabled=false;
     document.getElementById("inputTa").focus();
-    const voiceIsSpeaking = document.getElementById("voiceStatus")?.classList.contains("speaking") || window.speechSynthesis?.speaking;
+    const voiceIsSpeaking = document.getElementById("voiceStatus")?.classList.contains("speaking") || isSpeaking();
     if (voiceMode && !voiceIsSpeaking) {
       setVoiceStatus("listening");
       startRecognitionSafe(450);
