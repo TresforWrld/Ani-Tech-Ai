@@ -22,18 +22,17 @@
  */
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-// AI: xAI Grok (primary) — user's active API key
-// Multiple keys — if the first is rate-limited/revoked/exposed, the app
-// automatically falls back to the next one before giving up on a model.
-const AI_KEYS = [
-  "xai-BQUIBGuAXsY6wpntfvlWYy0O8B9sDtNz5VHGgSgDK8yxHrKlzYJbBXEBNE8NWrO2seso5WIDnFb9fqps",
-  "xai-LBqipPPJyAbjrE02anh68d95iw7STryu1KEplU7aHzCq9fnhvSO2bc5x3arn7jFcMZg8x2ZTs5rfW36i"
-];
-const AI_URL   = "https://api.x.ai/v1/chat/completions";
-// Model list — try in order, skip on 429 rate limit
+// AI: Pollinations.ai text API (OpenAI-compatible, KEY-FREE on the anonymous
+// tier). Switched from xAI because a client-exposed key on a public GitHub
+// repo will always eventually get scraped/revoked — there is no key here to
+// leak. Anonymous tier is rate-limited (~1 req / 15s), so we try a couple of
+// model aliases in order and lean on the existing 429 backoff/retry logic.
+const AI_URL    = "https://text.pollinations.ai/openai";
+// Model list — try in order, fall through to the next on error/429
 const AI_MODELS = [
-  "grok-4.3",
-  "grok-build-0.1",
+  "openai",       // gpt-5-mini class — default, best quality
+  "openai-fast",  // gpt-5-nano class — quicker fallback
+  "mistral",      // independent fallback if OpenAI-family models are busy
 ];
 
 // JSONBin v4.5 credentials — NEW BIN
@@ -123,7 +122,7 @@ let busy        = false;
 let eventsOn    = false;
 let deferredInstall = null;
 let voiceMode   = false;
-let voiceSettings = { voiceURI:null, rate:0.92, pitch:1.02, lang:"en-US", autoSpeak:false };
+let voiceSettings = { voiceURI:null, rate:0.92, pitch:1.02, lang:"en-US", autoSpeak:false, character:"ani" };
 let recognition = null;
 let recognitionActive = false;
 let voiceRestartTimer = null;
@@ -1449,6 +1448,56 @@ function setVoiceTranscript(text) {
 }
 
 // ─── VOICE SETTINGS ───────────────────────────────────────────────────────────
+// Named "character" voice presets — each is a rate/pitch/gender-hint combo the
+// person can toggle between. The actual system TTS voice picked for a
+// character is best-effort (browser/OS voice availability varies), but the
+// rate/pitch personality is always applied so each character sounds distinct.
+const VOICE_CHARACTERS = [
+  { id:"ani",   name:"Ani",   desc:"Warm & professional (default)", rate:0.92, pitch:1.02, genderHint:"female" },
+  { id:"nova",  name:"Nova",  desc:"Bright & energetic",            rate:1.08, pitch:1.18, genderHint:"female" },
+  { id:"max",   name:"Max",   desc:"Deep & calm",                   rate:0.85, pitch:0.82, genderHint:"male"   },
+  { id:"sage",  name:"Sage",  desc:"Slow & thoughtful",             rate:0.78, pitch:0.95, genderHint:"male"   },
+  { id:"pixel", name:"Pixel", desc:"Quick & playful",               rate:1.20, pitch:1.25, genderHint:"female" },
+];
+
+function guessVoiceGender(voice) {
+  const n = (voice.name || "").toLowerCase();
+  const femaleHints = ["female","zira","samantha","victoria","karen","susan","fiona","moira","tessa","nova","shimmer","alloy","fable","nicky","ava","allison","serena"];
+  const maleHints   = ["male","daniel","alex","fred","david","mark","tom","james","onyx","echo","aaron","arthur","oliver"];
+  if (femaleHints.some(h => n.includes(h))) return "female";
+  if (maleHints.some(h => n.includes(h))) return "male";
+  return "unknown";
+}
+
+function pickVoiceForCharacter(genderHint) {
+  const synth = window.speechSynthesis;
+  if (!synth) return null;
+  const voices = synth.getVoices().filter(v => v.lang.startsWith("en"));
+  if (!voices.length) return null;
+  const matched = voices.find(v => guessVoiceGender(v) === genderHint);
+  return matched ? matched.voiceURI : null;
+}
+
+function selectVoiceCharacter(id) {
+  const preset = VOICE_CHARACTERS.find(c => c.id === id);
+  if (!preset) return;
+
+  document.getElementById("vsRate").value = preset.rate;
+  document.getElementById("vsRateVal").textContent = preset.rate.toFixed(2) + "x";
+  document.getElementById("vsPitch").value = preset.pitch;
+  document.getElementById("vsPitchVal").textContent = preset.pitch.toFixed(2);
+
+  const guessedVoiceURI = pickVoiceForCharacter(preset.genderHint);
+  const voiceSel = document.getElementById("vsVoiceSelect");
+  if (voiceSel && guessedVoiceURI) voiceSel.value = guessedVoiceURI;
+
+  document.querySelectorAll(".vs-char-pill").forEach(el => {
+    el.classList.toggle("active", el.dataset.charId === id);
+  });
+  const activeCharInput = document.getElementById("vsActiveChar");
+  if (activeCharInput) activeCharInput.value = id;
+}
+
 function loadVoiceSettings() {
   try {
     const saved = JSON.parse(localStorage.getItem("anitechai_voice_settings") || "null");
@@ -1491,6 +1540,11 @@ function openVoiceSettings() {
   document.getElementById("vsPitch").value = voiceSettings.pitch;
   document.getElementById("vsPitchVal").textContent = Number(voiceSettings.pitch).toFixed(2);
   document.getElementById("vsAutoSpeak").checked = !!voiceSettings.autoSpeak;
+  document.querySelectorAll(".vs-char-pill").forEach(el => {
+    el.classList.toggle("active", el.dataset.charId === (voiceSettings.character || "ani"));
+  });
+  const activeCharInput = document.getElementById("vsActiveChar");
+  if (activeCharInput) activeCharInput.value = voiceSettings.character || "ani";
   document.getElementById("voiceSettingsOverlay")?.classList.remove("hidden");
 }
 
@@ -1504,6 +1558,7 @@ function saveVoiceSettings() {
   voiceSettings.rate = parseFloat(document.getElementById("vsRate").value) || 0.92;
   voiceSettings.pitch = parseFloat(document.getElementById("vsPitch").value) || 1.02;
   voiceSettings.autoSpeak = document.getElementById("vsAutoSpeak").checked;
+  voiceSettings.character = document.getElementById("vsActiveChar")?.value || "ani";
   persistVoiceSettings();
   loadBestVoice();
   if (recognition) recognition.lang = voiceSettings.lang;
@@ -1660,13 +1715,13 @@ function friendlyAIError(status, detail="") {
   return "AI request failed. Please try again.";
 }
 
-async function fetchAI(model, messages, stream, keyIndex = 0) {
+async function fetchAI(model, messages, stream) {
   const controller = new AbortController();
   const timer = setTimeout(()=>controller.abort(), stream ? 65000 : 45000);
   try {
     return await fetch(AI_URL, {
       method: "POST",
-      headers: { "Content-Type":"application/json", "Authorization":`Bearer ${AI_KEYS[keyIndex]}` },
+      headers: { "Content-Type":"application/json" },
       signal: controller.signal,
       body: JSON.stringify({ model, messages, temperature:0.7, max_tokens:2048, stream })
     });
@@ -1706,14 +1761,14 @@ async function parseAIResponse(res) {
   return data?.choices?.[0]?.message?.content?.trim() || "";
 }
 
-// Attempt a single model with a single key, retrying transient failures
-// (network/429/5xx) up to `maxRetries` times with capped exponential backoff.
-async function tryModelWithKey(model, messages, keyIndex, maxRetries = 2) {
+// Attempt a single model, retrying transient failures (network/429/5xx) up to
+// `maxRetries` times with capped exponential backoff before giving up on it.
+async function tryModel(model, messages, maxRetries = 2) {
   const MAX_BACKOFF = 6000;
   let backoff = 700;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      let res = await fetchAI(model, messages, true, keyIndex);
+      let res = await fetchAI(model, messages, true);
 
       if (res.status === 429 || res.status >= 500) {
         if (attempt < maxRetries) {
@@ -1728,22 +1783,20 @@ async function tryModelWithKey(model, messages, keyIndex, maxRetries = 2) {
       if (!res.ok) {
         const detail = await readAIError(res);
         const err = Object.assign(new Error(friendlyAIError(res.status, detail)), {status:res.status});
-        // Auth/billing errors on THIS key — worth trying the next key before giving up
-        if (isAuthError(res.status, detail) || res.status===402) { err.fatal = true; err.authFailure = true; throw err; }
-        // Bad/unavailable model — no point retrying this one
-        if (res.status===404) { err.skipModel = true; throw err; }
+        // Bad/unavailable model — no point retrying this one, just skip to the next
+        if (res.status===404 || isAuthError(res.status, detail)) { err.skipModel = true; throw err; }
         throw err;
       }
 
       const text = await parseAIResponse(res);
       if (text) return text;
 
-      // Empty stream — one non-streaming fallback attempt before giving up on this model+key
-      const res2 = await fetchAI(model, messages, false, keyIndex);
+      // Empty stream — one non-streaming fallback attempt before giving up on this model
+      const res2 = await fetchAI(model, messages, false);
       if (!res2.ok) {
         const detail = await readAIError(res2);
         const err = Object.assign(new Error(friendlyAIError(res2.status, detail)), {status:res2.status});
-        if (isAuthError(res2.status, detail) || res2.status===402) { err.fatal = true; err.authFailure = true; }
+        if (res2.status===404 || isAuthError(res2.status, detail)) err.skipModel = true;
         throw err;
       }
       const text2 = await parseAIResponse(res2);
@@ -1763,28 +1816,6 @@ async function tryModelWithKey(model, messages, keyIndex, maxRetries = 2) {
       throw e;
     }
   }
-}
-
-// Try a model across all configured keys — if one key is invalid, revoked,
-// or out of credits, automatically fall back to the next key before
-// giving up on this model entirely.
-async function tryModel(model, messages, maxRetries = 2) {
-  let lastErr = null;
-  for (let keyIndex = 0; keyIndex < AI_KEYS.length; keyIndex++) {
-    try {
-      return await tryModelWithKey(model, messages, keyIndex, maxRetries);
-    } catch (e) {
-      lastErr = e;
-      // Only rotate keys on auth/billing failures — other errors (bad model,
-      // timeout, network) won't be fixed by switching keys.
-      if (e?.authFailure && keyIndex < AI_KEYS.length - 1) {
-        console.warn(`AI key ${keyIndex+1} failed (${e.status}), trying next key…`);
-        continue;
-      }
-      throw e;
-    }
-  }
-  throw lastErr;
 }
 
 async function callAI(history) {
