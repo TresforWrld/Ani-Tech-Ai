@@ -368,6 +368,28 @@
     <p class="rate-title">Voice Settings</p>
     <p class="rate-sub">Tune how Ani-Tech AI sounds and listens.</p>
 
+    <input type="hidden" id="vsActiveChar" value="ani"/>
+    <div class="ob-select-group" style="margin-top:2px">
+      <label>Character voice</label>
+      <div class="vs-char-grid">
+        <button type="button" class="vs-char-pill active" data-char-id="ani" onclick="selectVoiceCharacter('ani')">
+          <span class="vs-char-name">Ani</span><span class="vs-char-desc">Warm & professional</span>
+        </button>
+        <button type="button" class="vs-char-pill" data-char-id="nova" onclick="selectVoiceCharacter('nova')">
+          <span class="vs-char-name">Nova</span><span class="vs-char-desc">Bright & energetic</span>
+        </button>
+        <button type="button" class="vs-char-pill" data-char-id="max" onclick="selectVoiceCharacter('max')">
+          <span class="vs-char-name">Max</span><span class="vs-char-desc">Deep & calm</span>
+        </button>
+        <button type="button" class="vs-char-pill" data-char-id="sage" onclick="selectVoiceCharacter('sage')">
+          <span class="vs-char-name">Sage</span><span class="vs-char-desc">Slow & thoughtful</span>
+        </button>
+        <button type="button" class="vs-char-pill" data-char-id="pixel" onclick="selectVoiceCharacter('pixel')">
+          <span class="vs-char-name">Pixel</span><span class="vs-char-desc">Quick & playful</span>
+        </button>
+      </div>
+    </div>
+
     <div class="ob-selects" style="margin-top:4px">
       <div class="ob-select-group">
         <label>Voice</label>
