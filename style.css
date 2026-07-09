@@ -568,6 +568,14 @@ textarea::placeholder{color:var(--tx3)}
 .vs-switch-track::before{content:"";position:absolute;width:16px;height:16px;left:2px;top:2px;background:var(--tx2);border-radius:50%;transition:all .2s}
 .vs-switch input:checked+.vs-switch-track{background:rgba(198,168,92,.25);border-color:var(--gold)}
 .vs-switch input:checked+.vs-switch-track::before{transform:translateX(16px);background:var(--gold)}
+
+.vs-char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-top:6px}
+.vs-char-pill{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:9px 10px;border:1px solid rgba(198,168,92,.18);background:rgba(255,255,255,.03);border-radius:10px;color:var(--tx2);cursor:pointer;transition:all .18s;text-align:left;font-family:var(--font)}
+.vs-char-pill:hover{border-color:var(--ac);background:rgba(0,191,255,.06)}
+.vs-char-pill.active{border-color:var(--gold);background:rgba(198,168,92,.1);box-shadow:0 0 10px rgba(198,168,92,.15)}
+.vs-char-name{font-size:.82rem;font-weight:700;color:var(--tx)}
+.vs-char-pill.active .vs-char-name{color:var(--gold)}
+.vs-char-desc{font-size:.68rem;color:var(--tx3);line-height:1.3}
 /* Rate button in topbar */
 .rate-btn{display:flex;align-items:center;gap:5px;background:rgba(198,168,92,.08);border:1px solid rgba(198,168,92,.22);color:var(--gold);border-radius:7px;padding:4px 10px;font-family:var(--head);font-size:.55rem;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.5px;text-transform:uppercase}
 .rate-btn svg{width:12px;height:12px}
