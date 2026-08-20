@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0B1C2D"/>
+<title>ANICADE AI — Your AI. Beyond Conversation.</title>
+<meta name="description" content="ANICADE AI by ANICADE Tech — an assistant that researches, writes, codes, analyzes and helps you learn, not just chat."/>
+<link rel="icon" href="https://i.imgur.com/9mjKZAj.jpeg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   ANICADE AI — Landing Page
+   Fonts: Orbitron (display) + Rajdhani (body)
+   Colors: #0B1C2D bg | #00BFFF accent | #C6A85C gold
+═══════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0B1C2D; --bg2:#0d2035; --bg3:#0f2540;
+  --card:rgba(13,26,42,0.72);
+  --glass:rgba(15,30,48,0.55);
+  --bd:rgba(255,255,255,0.07); --bd2:rgba(198,168,92,0.18); --bd3:rgba(0,191,255,0.18);
+  --ac:#00BFFF; --gold:#C6A85C; --success:#39ff14;
+  --tx:#F5F7FA; --tx2:#94A3B8; --tx3:#5c7089;
+  --red:#ff4466; --amber:#FFB020;
+  --font:'Rajdhani',sans-serif; --head:'Orbitron',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth;font-size:15px}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+body{background:var(--bg);color:var(--tx);font-family:var(--font);font-weight:500;overflow-x:hidden;line-height:1.5}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(198,168,92,.3);border-radius:8px}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+ul{list-style:none}
+:focus-visible{outline:2px solid var(--ac);outline-offset:3px;border-radius:4px}
+
+.g-blue{background:linear-gradient(90deg,var(--ac),#5fd8ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.g-gold{background:linear-gradient(90deg,var(--gold),#e8c97a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* background field */
+.bg-field{position:fixed;inset:0;z-index:-2;background:
+  radial-gradient(ellipse 900px 600px at 15% -5%, rgba(0,191,255,.10), transparent 60%),
+  radial-gradient(ellipse 800px 700px at 100% 20%, rgba(198,168,92,.08), transparent 55%),
+  radial-gradient(ellipse 1000px 800px at 50% 100%, rgba(0,191,255,.06), transparent 60%),
+  var(--bg);}
+.bg-grid{position:fixed;inset:0;z-index:-1;background-image:linear-gradient(rgba(0,191,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,191,255,.03) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to bottom,black,transparent 90%)}
+
+@keyframes ringSpin1{to{transform:rotate(360deg)}}
+@keyframes ringSpin2{to{transform:rotate(-360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* ─── Logo ring (reused brand mark) ─── */
+.logo-ring{position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-ring::before{content:'';position:absolute;inset:0;border-radius:38% 62% 63% 37%/41% 44% 56% 59%;border:1.5px solid rgba(198,168,92,.45);animation:ringSpin1 7s linear infinite}
+.logo-ring::after{content:'';position:absolute;inset:14%;border-radius:41% 44% 56% 59%/38% 62% 63% 37%;border:1px solid rgba(0,191,255,.32);animation:ringSpin2 5s linear infinite}
+.logo-ring img{position:relative;z-index:2;border-radius:50%;object-fit:cover;border:1.5px solid rgba(198,168,92,.3)}
+
+/* ─── Glass panel utility (HD glass effect) ─── */
+.glass{
+  background:var(--glass);
+  border:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 20px 60px rgba(0,0,0,.35);
+}
+
+/* ─── NAV ─── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:12px 26px;background:rgba(9,18,30,.62);backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);border-bottom:1px solid rgba(198,168,92,.1);transition:background .25s,border-color .25s}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-brand .logo-ring{width:34px;height:34px}
+.nav-brand .logo-ring img{width:24px;height:24px}
+.nav-brand-txt{display:flex;flex-direction:column;line-height:1.15}
+.nav-brand-txt strong{font-family:var(--head);font-size:.76rem;font-weight:900;letter-spacing:1.2px;color:var(--gold);text-shadow:0 0 12px rgba(198,168,92,.25)}
+.nav-brand-txt span{font-size:.58rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em}
+.nav-links{display:flex;align-items:center;gap:26px}
+.nav-links a{font-family:var(--head);font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2);transition:color .2s;position:relative}
+.nav-links a:hover{color:var(--tx)}
+.nav-actions{display:flex;align-items:center;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--head);font-weight:700;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;transition:all .22s;border-radius:11px;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--ac),#0077aa);color:#0B1C2D;border:none;padding:11px 22px;font-size:.66rem;box-shadow:0 4px 22px rgba(0,191,255,.25)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,191,255,.4)}
+.btn-primary svg{width:13px;height:13px;transition:transform .2s}
+.btn-primary:hover svg{transform:translateX(3px)}
+.btn-ghost{background:rgba(255,255,255,.03);border:1px solid rgba(198,168,92,.22);color:var(--tx2);padding:10px 18px;font-size:.62rem}
+.btn-ghost:hover{color:var(--gold);border-color:var(--gold);background:rgba(198,168,92,.06)}
+.btn-sm{padding:8px 15px;font-size:.58rem}
+.nav-menu-btn{display:none;background:rgba(255,255,255,.04);border:1px solid rgba(198,168,92,.2);color:var(--gold);border-radius:8px;padding:8px;cursor:pointer}
+.nav-menu-btn svg{width:16px;height:16px;display:block}
+
+/* mobile nav drawer */
+.nav-drawer{position:fixed;inset:0 0 0 auto;width:min(78vw,320px);background:rgba(9,18,30,.97);backdrop-filter:blur(20px);border-left:1px solid rgba(198,168,92,.15);z-index:600;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);padding:22px;display:flex;flex-direction:column;gap:4px}
+.nav-drawer.open{transform:translateX(0)}
+.nav-drawer a{font-family:var(--head);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2);padding:14px 6px;border-bottom:1px solid rgba(255,255,255,.05)}
+.nav-drawer-close{align-self:flex-end;background:none;border:none;color:var(--tx3);cursor:pointer;padding:6px;margin-bottom:10px}
+.nav-drawer-close svg{width:18px;height:18px}
+.nav-scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:550;opacity:0;pointer-events:none;transition:opacity .3s}
+.nav-scrim.open{opacity:1;pointer-events:auto}
+
+/* ─── Section shell ─── */
+section{position:relative;padding:100px 26px;z-index:1}
+.wrap{max-width:1100px;margin:0 auto;width:100%}
+.wrap-nar{max-width:820px;margin:0 auto;width:100%}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--head);font-size:.62rem;font-weight:700;letter-spacing:.28em;text-transform:uppercase;color:var(--ac);margin-bottom:16px}
+.eyebrow::before{content:'';width:22px;height:1px;background:linear-gradient(90deg,var(--ac),transparent)}
+.sec-h{font-family:var(--head);font-weight:900;font-size:clamp(1.5rem,3.6vw,2.3rem);letter-spacing:.5px;line-height:1.15;margin-bottom:14px;color:var(--tx)}
+.sec-sub{font-size:1rem;color:var(--tx2);max-width:640px;line-height:1.7;margin-bottom:44px}
+.sec-head-center{text-align:center}
+.sec-head-center .sec-sub{margin-left:auto;margin-right:auto}
+.sec-head-center .eyebrow::before{display:none}
+
+/* ─── HERO ─── */
+.hero{min-height:100svh;display:flex;align-items:center;padding:130px 26px 80px;position:relative;overflow:hidden}
+.hero-inner{max-width:900px;margin:0 auto;text-align:center;position:relative;z-index:2}
+.hero-badge{display:inline-flex;align-items:center;gap:9px;background:rgba(198,168,92,.07);border:1px solid rgba(198,168,92,.22);border-radius:30px;padding:8px 18px;font-family:var(--head);font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--gold);text-transform:uppercase;margin-bottom:28px;animation:fadeUp .7s ease both}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--ac);box-shadow:0 0 8px var(--ac);animation:pulse 2.2s infinite}
+.hero-logo{width:110px;height:110px;margin:0 auto 26px;animation:fadeUp .7s ease .05s both}
+.hero-logo img{width:80px;height:80px;box-shadow:0 0 34px rgba(198,168,92,.22),0 0 60px rgba(0,191,255,.12)}
+.hero h1{font-family:var(--head);font-weight:900;font-size:clamp(2.2rem,7vw,4.3rem);letter-spacing:-1px;line-height:1.06;margin-bottom:18px;animation:fadeUp .7s ease .1s both}
+.hero-tagline{font-family:var(--head);font-weight:700;font-size:clamp(1.1rem,2.6vw,1.55rem);letter-spacing:.5px;color:var(--tx);margin-bottom:20px;animation:fadeUp .7s ease .16s both}
+.hero p.desc{font-size:1.05rem;color:var(--tx2);max-width:600px;margin:0 auto 38px;line-height:1.75;animation:fadeUp .7s ease .22s both}
+.hero-ctas{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;animation:fadeUp .7s ease .28s both}
+.hero-ctas .btn-primary{padding:15px 30px;font-size:.72rem}
+.hero-note{margin-top:18px;font-size:.72rem;color:var(--tx3);letter-spacing:.02em;animation:fadeUp .7s ease .32s both}
+
+.hero-orb{position:absolute;border-radius:38% 62% 63% 37%/41% 44% 56% 59%;pointer-events:none;z-index:0}
+.hero-orb.o1{width:520px;height:520px;top:-160px;left:-180px;border:1px solid rgba(0,191,255,.08);animation:ringSpin1 40s linear infinite}
+.hero-orb.o2{width:380px;height:380px;bottom:-140px;right:-120px;border:1px solid rgba(198,168,92,.07);border-radius:41% 44% 56% 59%/38% 62% 63% 37%;animation:ringSpin2 32s linear infinite}
+
+.hero-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 12px;margin-top:56px;animation:fadeUp .7s ease .36s both}
+.strip-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:7px 14px;font-size:.74rem;color:var(--tx2)}
+.strip-pill svg{width:13px;height:13px;color:var(--ac);flex-shrink:0}
+
+/* ─── What is ANICADE AI ─── */
+.what-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
+.what-copy p{color:var(--tx2);font-size:1rem;line-height:1.8;margin-bottom:16px}
+.what-copy strong{color:var(--tx)}
+.what-panel{border-radius:20px;padding:30px;position:relative;overflow:hidden}
+.what-panel::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,191,255,.05),rgba(198,168,92,.03));pointer-events:none}
+.what-row{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.what-row:last-child{border-bottom:none}
+.what-row .ico{width:34px;height:34px;border-radius:9px;background:rgba(0,191,255,.08);border:1px solid rgba(0,191,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.what-row .ico svg{width:16px;height:16px;color:var(--ac)}
+.what-row h4{font-family:var(--head);font-size:.78rem;font-weight:700;color:var(--tx);margin-bottom:4px;letter-spacing:.3px}
+.what-row p{font-size:.82rem;color:var(--tx3);line-height:1.55}
+
+/* ─── Capability / Use case / Feature cards grid ─── */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.card{border-radius:16px;padding:24px 20px;transition:all .28s ease;position:relative}
+.card:hover{transform:translateY(-4px);border-color:rgba(198,168,92,.3);box-shadow:0 16px 40px rgba(0,0,0,.35)}
+.card .ico{width:42px;height:42px;border-radius:11px;background:rgba(198,168,92,.08);border:1px solid rgba(198,168,92,.22);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.card .ico svg{width:19px;height:19px;color:var(--gold)}
+.card h3{font-family:var(--head);font-size:.86rem;font-weight:700;letter-spacing:.3px;margin-bottom:8px;color:var(--tx)}
+.card p{font-size:.83rem;color:var(--tx3);line-height:1.6}
+.card.ac-tint .ico{background:rgba(0,191,255,.08);border-color:rgba(0,191,255,.22)}
+.card.ac-tint .ico svg{color:var(--ac)}
+
+/* ─── How it works ─── */
+.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:0;position:relative;counter-reset:step}
+.flow-step{position:relative;padding:32px 24px;text-align:center}
+.flow-num{font-family:var(--head);font-size:.62rem;font-weight:700;letter-spacing:.2em;color:var(--gold);margin-bottom:14px;display:block}
+.flow-ico{width:64px;height:64px;border-radius:50%;margin:0 auto 18px;background:linear-gradient(135deg,rgba(0,191,255,.1),rgba(198,168,92,.06));border:1px solid rgba(198,168,92,.25);display:flex;align-items:center;justify-content:center}
+.flow-ico svg{width:26px;height:26px;color:var(--ac)}
+.flow-step h3{font-family:var(--head);font-size:.95rem;font-weight:700;margin-bottom:8px;color:var(--tx)}
+.flow-step p{font-size:.84rem;color:var(--tx3);max-width:230px;margin:0 auto;line-height:1.6}
+.flow-arrow{position:absolute;top:50px;right:-10%;width:20%;display:flex;align-items:center;justify-content:center;color:rgba(198,168,92,.3)}
+.flow-arrow svg{width:26px;height:26px}
+
+/* ─── Why ANICADE ─── */
+.why-list{display:flex;flex-direction:column;gap:2px}
+.why-item{display:grid;grid-template-columns:52px 1fr;gap:18px;align-items:flex-start;padding:22px 4px;border-bottom:1px solid rgba(255,255,255,.06)}
+.why-item:last-child{border-bottom:none}
+.why-ico{width:52px;height:52px;border-radius:13px;background:rgba(198,168,92,.07);border:1px solid rgba(198,168,92,.2);display:flex;align-items:center;justify-content:center}
+.why-ico svg{width:22px;height:22px;color:var(--gold)}
+.why-item h3{font-family:var(--head);font-size:.88rem;font-weight:700;margin-bottom:5px;color:var(--tx)}
+.why-item p{font-size:.85rem;color:var(--tx3);line-height:1.6;max-width:560px}
+
+/* ─── Tools & Integrations ─── */
+.tool-card{position:relative}
+.soon-badge{position:absolute;top:14px;right:14px;background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.28);color:var(--amber);font-family:var(--head);font-size:.5rem;font-weight:700;letter-spacing:.08em;padding:3px 8px;border-radius:20px;text-transform:uppercase}
+.live-badge2{position:absolute;top:14px;right:14px;background:rgba(57,255,20,.08);border:1px solid rgba(57,255,20,.22);color:var(--success);font-family:var(--head);font-size:.5rem;font-weight:700;letter-spacing:.08em;padding:3px 8px;border-radius:20px;text-transform:uppercase}
+
+/* ─── Future features ─── */
+.future-card{border-style:dashed;opacity:.92}
+.future-card .ico{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.1)}
+.future-card .ico svg{color:var(--tx2)}
+.future-tag{display:inline-block;margin-top:10px;font-family:var(--head);font-size:.52rem;font-weight:700;letter-spacing:.1em;color:var(--tx3);text-transform:uppercase;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:3px 9px}
+
+/* ─── Pricing ─── */
+.price-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.price-card{border-radius:18px;padding:26px 20px;display:flex;flex-direction:column;position:relative;transition:all .25s}
+.price-card:hover{transform:translateY(-4px)}
+.price-card.hi{border-color:rgba(198,168,92,.4)}
+.price-pop{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--ac),#0077aa);color:#0B1C2D;font-family:var(--head);font-size:.5rem;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.5px;white-space:nowrap}
+.price-name{font-family:var(--head);font-size:.78rem;font-weight:700;letter-spacing:.5px;color:var(--tx2);margin-bottom:12px;text-transform:uppercase}
+.price-amt{font-family:var(--head);font-size:1.7rem;font-weight:900;color:var(--tx);margin-bottom:2px}
+.price-amt span{font-size:.68rem;color:var(--tx3);font-weight:600}
+.price-desc{font-size:.76rem;color:var(--tx3);margin-bottom:18px;line-height:1.5;min-height:36px}
+.price-feats{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:20px;flex:1}
+.price-feats li{font-size:.76rem;color:var(--tx2);display:flex;align-items:flex-start;gap:6px;line-height:1.4}
+.price-feats li svg{width:12px;height:12px;color:var(--success);flex-shrink:0;margin-top:2px}
+.price-card .btn{width:100%}
+.pricing-foot{margin-top:36px;text-align:center;font-size:.82rem;color:var(--tx2);display:flex;flex-direction:column;gap:6px}
+.pricing-foot a{color:var(--ac)}
+.pricing-foot a:hover{text-decoration:underline}
+
+/* ─── FAQ ─── */
+.faq-item{border-radius:14px;overflow:hidden;margin-bottom:10px}
+.faq-item summary{list-style:none;cursor:pointer;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px;font-family:var(--head);font-size:.82rem;font-weight:700;color:var(--tx);letter-spacing:.2px}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary .plus{width:22px;height:22px;border-radius:50%;border:1px solid rgba(198,168,92,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .25s;color:var(--gold)}
+.faq-item summary .plus svg{width:11px;height:11px}
+.faq-item[open] summary .plus{transform:rotate(45deg);background:rgba(198,168,92,.1)}
+.faq-item .faq-a{padding:0 22px 20px;font-size:.86rem;color:var(--tx3);line-height:1.7}
+
+/* ─── Final CTA ─── */
+.cta-final{border-radius:26px;padding:64px 40px;text-align:center;position:relative;overflow:hidden}
+.cta-final::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 600px 300px at 50% 0%,rgba(0,191,255,.14),transparent 70%);pointer-events:none}
+.cta-final .logo-ring{width:74px;height:74px;margin:0 auto 20px}
+.cta-final .logo-ring img{width:52px;height:52px}
+.cta-final h2{font-family:var(--head);font-weight:900;font-size:clamp(1.5rem,4vw,2.2rem);margin-bottom:12px;position:relative;z-index:1}
+.cta-final p{color:var(--tx2);max-width:520px;margin:0 auto 30px;font-size:1rem;line-height:1.7;position:relative;z-index:1}
+.cta-final .btn-primary{padding:16px 36px;font-size:.76rem;position:relative;z-index:1}
+
+/* ─── Footer ─── */
+footer{border-top:1px solid rgba(198,168,92,.1);padding:36px 26px 28px;background:rgba(6,13,22,.6)}
+.foot-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.foot-brand{display:flex;align-items:center;gap:10px}
+.foot-brand .logo-ring{width:30px;height:30px}
+.foot-brand .logo-ring img{width:22px;height:22px}
+.foot-brand strong{font-family:var(--head);font-size:.7rem;color:var(--gold);letter-spacing:1px}
+.foot-links{display:flex;gap:22px;flex-wrap:wrap}
+.foot-links a{font-size:.78rem;color:var(--tx3);transition:color .2s}
+.foot-links a:hover{color:var(--gold)}
+.foot-copy{font-size:.72rem;color:var(--tx3);width:100%;text-align:center;margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.04)}
+
+/* ─── Back to top ─── */
+.top-btn{position:fixed;bottom:22px;right:22px;width:42px;height:42px;border-radius:50%;background:rgba(13,26,42,.85);border:1px solid rgba(198,168,92,.28);color:var(--gold);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:300;opacity:0;pointer-events:none;transform:translateY(10px);transition:all .25s;backdrop-filter:blur(10px)}
+.top-btn.show{opacity:1;pointer-events:auto;transform:none}
+.top-btn svg{width:16px;height:16px}
+.top-btn:hover{border-color:var(--gold);background:rgba(198,168,92,.1)}
+
+/* ─── Responsive ─── */
+@media(max-width:980px){
+  .grid4{grid-template-columns:repeat(2,1fr)}
+  .price-grid{grid-template-columns:repeat(2,1fr)}
+  .flow{grid-template-columns:1fr;gap:8px}
+  .flow-arrow{display:none}
+  .what-grid{grid-template-columns:1fr;gap:30px}
+}
+@media(max-width:760px){
+  .nav-links{display:none}
+  .nav-menu-btn{display:flex}
+  .nav-actions .btn-ghost{display:none}
+  section{padding:70px 18px}
+  .hero{padding:110px 18px 60px}
+  .grid3{grid-template-columns:1fr 1fr}
+  .grid2{grid-template-columns:1fr}
+  .why-item{grid-template-columns:44px 1fr;gap:14px}
+}
+@media(max-width:520px){
+  .grid4{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr}
+  .price-grid{grid-template-columns:1fr}
+  .hero-ctas{flex-direction:column;width:100%}
+  .hero-ctas .btn{width:100%}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-field"></div>
+<div class="bg-grid"></div>
+
+<!-- ═══ NAV ═══ -->
+<nav class="nav">
+  <a href="#" class="nav-brand">
+    <div class="logo-ring"><img src="https://i.imgur.com/9mjKZAj.jpeg" alt="ANICADE Tech logo"/></div>
+    <div class="nav-brand-txt"><strong>ANICADE <span style="color:var(--ac)">AI</span></strong><span>by ANICADE Tech</span></div>
+  </a>
+  <div class="nav-links">
+    <a href="#what">What It Is</a>
+    <a href="#capabilities">Capabilities</a>
+    <a href="#usecases">Use Cases</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <div class="nav-actions">
+    <a href="login.html" class="btn btn-ghost btn-sm">Sign In</a>
+    <a href="login.html" class="btn btn-primary btn-sm">
+      Get Started
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </a>
+  </div>
+  <button class="nav-menu-btn" id="menuBtn" aria-label="Open menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+</nav>
+<div class="nav-scrim" id="navScrim"></div>
+<div class="nav-drawer" id="navDrawer">
+  <button class="nav-drawer-close" id="drawerClose" aria-label="Close menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <a href="#what">What It Is</a>
+  <a href="#capabilities">Capabilities</a>
+  <a href="#usecases">Use Cases</a>
+  <a href="#tools">Tools</a>
+  <a href="#pricing">Pricing</a>
+  <a href="#faq">FAQ</a>
+  <a href="login.html" style="margin-top:14px;color:var(--gold)">Sign In</a>
+  <a href="login.html" class="btn btn-primary" style="margin-top:10px;justify-content:center">Get Started — It's Free</a>
+</div>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero" id="top">
+  <div class="hero-orb o1"></div>
+  <div class="hero-orb o2"></div>
+  <div class="hero-inner">
+    <div class="hero-badge"><span class="dot"></span>ANICADE TECH PRESENTS</div>
+    <div class="hero-logo logo-ring"><img src="https://i.imgur.com/9mjKZAj.jpeg" alt="ANICADE AI logo"/></div>
+    <h1>ANICADE <span class="g-blue">AI</span></h1>
+    <p class="hero-tagline">Your AI. Beyond Conversation.</p>
+    <p class="desc">An assistant built to help you <strong style="color:var(--tx)">understand as much as you accomplish</strong> — research, write, code, and solve real problems, while actually learning something along the way.</p>
+    <div class="hero-ctas">
+      <a href="login.html" class="btn btn-primary">
+        Get Started — It's Free
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+      <a href="#what" class="btn btn-ghost">See what it can do</a>
+    </div>
+    <p class="hero-note">No credit card required · Free plan included</p>
+    <div class="hero-strip">
+      <div class="strip-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Research</div>
+      <div class="strip-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>Coding</div>
+      <div class="strip-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Writing</div>
+      <div class="strip-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Content</div>
+      <div class="strip-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>Analysis</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WHAT IS ANICADE AI ═══ -->
+<section id="what">
+  <div class="wrap">
+    <div class="what-grid">
+      <div class="what-copy reveal">
+        <span class="eyebrow">What is ANICADE AI?</span>
+        <h2 class="sec-h">An assistant that finishes the task, not just the sentence.</h2>
+        <p>ANICADE AI is the intelligent assistant built by ANICADE Tech. It's designed to go <strong>beyond basic chat</strong> — instead of just answering questions, it helps you actually get things done.</p>
+        <p>Ask it to research a topic, draft a document, debug a script, or make sense of a messy file, and it works through the task with you — explaining its reasoning along the way so you come out the other side understanding more than when you started.</p>
+        <p>Whether you're learning something new or shipping something real, ANICADE AI is built to be useful in the moment and genuinely educational over time.</p>
+      </div>
+      <div class="what-panel glass reveal">
+        <div class="what-row">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div><h4>Not just a chatbot</h4><p>It carries context, follows multi-step instructions, and works toward an outcome — not just a reply.</p></div>
+        </div>
+        <div class="what-row">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div><h4>Built for real tasks</h4><p>From code to content, it's designed around what people actually need to accomplish, not novelty conversation.</p></div>
+        </div>
+        <div class="what-row">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
+          <div><h4>Made to help you learn</h4><p>Explanations, not just outputs — so every answer leaves you a little sharper than before.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CORE CAPABILITIES ═══ -->
+<section id="capabilities">
+  <div class="wrap">
+    <div class="sec-head-center reveal">
+      <span class="eyebrow" style="justify-content:center;display:flex">Core Capabilities</span>
+      <h2 class="sec-h">One assistant, a full toolbox</h2>
+      <p class="sec-sub">ANICADE AI is built to handle a wide range of tasks so you don't need a different tool for every job.</p>
+    </div>
+    <div class="grid4">
+      <div class="card glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <h3>Research</h3><p>Explore a topic, gather information, and get a clear, organized summary of what matters.</p>
+      </div>
+      <div class="card glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+        <h3>Writing</h3><p>Draft, edit, and refine emails, articles, reports, and everyday writing in your own voice.</p>
+      </div>
+      <div class="card glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+        <h3>Coding</h3><p>Write, explain, and debug code across languages — with a built-in editor to test as you go.</p>
+      </div>
+      <div class="card glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
+        <h3>Data &amp; File Analysis</h3><p>Make sense of documents and data — find patterns, summarize, and pull out what's useful.</p>
+      </div>
+      <div class="card glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+        <h3>Content Creation</h3><p>Generate images and creative material to support posts, presentations, and projects.</p>
+      </div>
+      <div class="card glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>Problem Solving</h3><p>Break down a hard question step by step and reason through it with you until it's resolved.</p>
+      </div>
+      <div class="card glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg></div>
+        <h3>Automation</h3><p>Hand off repeatable, multi-step tasks so you spend less time on the busywork.</p>
+      </div>
+      <div class="card glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <h3>Productivity Assistance</h3><p>Plan, organize, and move through your day-to-day work with a assistant that keeps context.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ USE CASES ═══ -->
+<section id="usecases">
+  <div class="wrap">
+    <div class="sec-head-center reveal">
+      <span class="eyebrow" style="justify-content:center;display:flex">Use Cases</span>
+      <h2 class="sec-h">Built for how you actually work</h2>
+      <p class="sec-sub">ANICADE AI adapts to what you're trying to do, whoever you are.</p>
+    </div>
+    <div class="grid3">
+      <div class="card ac-tint glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+        <h3>Creators</h3><p>Brainstorm ideas, write scripts and captions, and generate visuals for your content.</p>
+      </div>
+      <div class="card ac-tint glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+        <h3>Developers</h3><p>Write and debug code, explain concepts, and move faster through the built-in code editor.</p>
+      </div>
+      <div class="card ac-tint glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
+        <h3>Students</h3><p>Break down difficult topics, get study help, and understand concepts instead of just answers.</p>
+      </div>
+      <div class="card ac-tint glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h3>Entrepreneurs</h3><p>Draft pitches, plan next steps, and get a thinking partner for early-stage decisions.</p>
+      </div>
+      <div class="card ac-tint glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg></div>
+        <h3>Businesses</h3><p>Draft communications, analyze information, and support day-to-day operational work.</p>
+      </div>
+      <div class="card ac-tint glass reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
+        <h3>Everyday Users</h3><p>Get quick, clear help with everyday questions, writing, and tasks — no learning curve.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head-center reveal">
+      <span class="eyebrow" style="justify-content:center;display:flex">How It Works</span>
+      <h2 class="sec-h">Three steps. That's it.</h2>
+    </div>
+    <div class="flow glass reveal" style="border-radius:20px">
+      <div class="flow-step">
+        <span class="flow-num">STEP 01</span>
+        <div class="flow-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <h3>Ask</h3><p>Type your question or task in plain language — no special commands needed.</p>
+      </div>
+      <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+      <div class="flow-step">
+        <span class="flow-num">STEP 02</span>
+        <div class="flow-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+        <h3>ANICADE AI Processes It</h3><p>It reasons through the request, using the right approach and tools for the task at hand.</p>
+      </div>
+      <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+      <div class="flow-step">
+        <span class="flow-num">STEP 03</span>
+        <div class="flow-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <h3>Receive the Result</h3><p>Get a clear, usable answer — ready to copy, run, refine, or build on further.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WHY ANICADE ═══ -->
+<section id="why">
+  <div class="wrap-nar">
+    <div class="reveal">
+      <span class="eyebrow">Why ANICADE</span>
+      <h2 class="sec-h">Why choose ANICADE AI?</h2>
+    </div>
+    <div class="why-list reveal">
+      <div class="why-item">
+        <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg></div>
+        <div><h3>Intelligent Assistance</h3><p>Reasons through requests instead of just pattern-matching a reply, so answers are actually useful.</p></div>
+      </div>
+      <div class="why-item">
+        <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
+        <div><h3>Personalization</h3><p>Tune the response style and tone to how you like to work, from a quick onboarding step.</p></div>
+      </div>
+      <div class="why-item">
+        <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div><h3>Context Awareness</h3><p>Keeps track of the conversation, so you don't have to repeat yourself as a task develops.</p></div>
+      </div>
+      <div class="why-item">
+        <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></div>
+        <div><h3>Productivity-Focused</h3><p>Designed around finishing tasks, not just holding a conversation.</p></div>
+      </div>
+      <div class="why-item">
+        <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+        <div><h3>Multiple Capabilities in One Place</h3><p>Chat, code editor, image generation, and community chat — under a single assistant.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TOOLS & INTEGRATIONS ═══ -->
+<section id="tools">
+  <div class="wrap">
+    <div class="sec-head-center reveal">
+      <span class="eyebrow" style="justify-content:center;display:flex">Tools &amp; Integrations</span>
+      <h2 class="sec-h">Works with what you already use</h2>
+      <p class="sec-sub">ANICADE AI is expanding its reach across the tools people already work in.</p>
+    </div>
+    <div class="grid3">
+      <div class="card glass tool-card reveal"><span class="live-badge2">Available</span>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"/></svg></div>
+        <h3>Web</h3><p>Use ANICADE AI directly in your browser — no install required to get started.</p>
+      </div>
+      <div class="card glass tool-card reveal"><span class="live-badge2">Available</span>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+        <h3>Development Tools</h3><p>A built-in code editor to write, run, and get AI help on your code in one place.</p>
+      </div>
+      <div class="card glass tool-card reveal"><span class="soon-badge">Coming Soon</span>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <h3>Files</h3><p>Upload and work directly with your documents and files inside a conversation.</p>
+      </div>
+      <div class="card glass tool-card reveal"><span class="soon-badge">Coming Soon</span>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+        <h3>APIs</h3><p>Connect ANICADE AI to your own apps and services for custom workflows.</p>
+      </div>
+      <div class="card glass tool-card reveal"><span class="soon-badge">Coming Soon</span>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <h3>Messaging Platforms</h3><p>Bring ANICADE AI into the messaging apps you already talk to people on.</p>
+      </div>
+      <div class="card glass tool-card reveal"><span class="soon-badge">Coming Soon</span>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+        <h3>Other Integrations</h3><p>More connections to the tools you rely on, rolling out over time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FUTURE FEATURES ═══ -->
+<section id="future">
+  <div class="wrap">
+    <div class="sec-head-center reveal">
+      <span class="eyebrow" style="justify-content:center;display:flex">On the Roadmap</span>
+      <h2 class="sec-h">What's next for ANICADE AI</h2>
+      <p class="sec-sub">ANICADE Tech is actively building toward a more capable assistant. Here's what's coming.</p>
+    </div>
+    <div class="grid3">
+      <div class="card glass future-card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></div>
+        <h3>Voice Assistant</h3><p>Fuller, more natural voice conversations beyond the current voice call mode.</p>
+        <span class="future-tag">Coming Soon</span>
+      </div>
+      <div class="card glass future-card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg></div>
+        <h3>Advanced Automation</h3><p>Multi-step workflows that run with less back-and-forth from you.</p>
+        <span class="future-tag">Coming Soon</span>
+      </div>
+      <div class="card glass future-card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/></svg></div>
+        <h3>AI Agents</h3><p>Assistants that can carry out tasks on your behalf, not just respond to prompts.</p>
+        <span class="future-tag">Coming Soon</span>
+      </div>
+      <div class="card glass future-card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+        <h3>Expanded Integrations</h3><p>More tools, platforms, and services connected directly to ANICADE AI.</p>
+        <span class="future-tag">Coming Soon</span>
+      </div>
+      <div class="card glass future-card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
+        <h3>Personal Memory</h3><p>An assistant that remembers your preferences and context across sessions.</p>
+        <span class="future-tag">Coming Soon</span>
+      </div>
+      <div class="card glass future-card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></div>
+        <h3>More Advanced Models &amp; Tools</h3><p>Continued upgrades to the intelligence and tools behind ANICADE AI.</p>
+        <span class="future-tag">Coming Soon</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRICING ═══ -->
+<section id="pricing">
+  <div class="wrap">
+    <div class="sec-head-center reveal">
+      <span class="eyebrow" style="justify-content:center;display:flex">Pricing</span>
+      <h2 class="sec-h">Start free. Upgrade when you need to.</h2>
+      <p class="sec-sub">A free plan is always included. Paid plans are available for more usage.</p>
+    </div>
+    <div class="price-grid reveal">
+      <div class="price-card glass">
+        <div class="price-name">Free</div>
+        <div class="price-amt">K0 <span>/month</span></div>
+        <p class="price-desc">Get started with ANICADE AI at no cost.</p>
+        <ul class="price-feats">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Access to ANICADE AI chat</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Code editor access</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Global community chat</li>
+        </ul>
+        <a href="login.html" class="btn btn-ghost">Get Started</a>
+      </div>
+      <div class="price-card glass hi">
+        <div class="price-pop">Popular</div>
+        <div class="price-name">Starter</div>
+        <div class="price-amt">K25 <span>/month</span></div>
+        <p class="price-desc">More headroom for regular, everyday use.</p>
+        <ul class="price-feats">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Everything in Free</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Increased usage limits</li>
+        </ul>
+        <a href="login.html" class="btn btn-primary">Get Started</a>
+      </div>
+      <div class="price-card glass">
+        <div class="price-name">Plus</div>
+        <div class="price-amt">K50 <span>/month</span></div>
+        <p class="price-desc">Built for consistent, heavier daily use.</p>
+        <ul class="price-feats">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Everything in Starter</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Higher usage limits</li>
+        </ul>
+        <a href="login.html" class="btn btn-ghost">Get Started</a>
+      </div>
+      <div class="price-card glass">
+        <div class="price-name">Pro</div>
+        <div class="price-amt">K100 <span>/month</span></div>
+        <p class="price-desc">For power users who lean on it daily.</p>
+        <ul class="price-feats">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Everything in Plus</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Priority access</li>
+        </ul>
+        <a href="login.html" class="btn btn-ghost">Get Started</a>
+      </div>
+      <div class="price-card glass">
+        <div class="price-name">Business</div>
+        <div class="price-amt">K200 <span>/month</span></div>
+        <p class="price-desc">Highest tier for teams and heavy workloads.</p>
+        <ul class="price-feats">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Everything in Pro</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Full feature access</li>
+        </ul>
+        <a href="login.html" class="btn btn-ghost">Get Started</a>
+      </div>
+    </div>
+    <div class="pricing-foot reveal">
+      <p>Pay via MTN Mobile Money, Airtel Money, Bank Transfer, or WhatsApp.</p>
+      <p><a href="https://wa.me/260777083995" target="_blank" rel="noopener">WhatsApp: +260 777 083 995</a> — to arrange payment</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FAQ ═══ -->
+<section id="faq">
+  <div class="wrap-nar">
+    <div class="sec-head-center reveal">
+      <span class="eyebrow" style="justify-content:center;display:flex">FAQ</span>
+      <h2 class="sec-h">Common questions</h2>
+    </div>
+    <div class="reveal">
+      <details class="faq-item glass" open>
+        <summary>What is ANICADE AI?<span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></summary>
+        <div class="faq-a">ANICADE AI is the intelligent assistant built by ANICADE Tech. It's designed to go beyond basic chat and help you actually complete tasks — from research and writing to coding and problem solving.</div>
+      </details>
+      <details class="faq-item glass">
+        <summary>What can it do?<span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></summary>
+        <div class="faq-a">It can help with research, writing, coding, data and file analysis, content creation, problem solving, automation, and general productivity — all from one assistant.</div>
+      </details>
+      <details class="faq-item glass">
+        <summary>Who is it for?<span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></summary>
+        <div class="faq-a">Creators, developers, students, entrepreneurs, businesses, and everyday users — anyone who wants an assistant that helps them get real work done.</div>
+      </details>
+      <details class="faq-item glass">
+        <summary>Is it free?<span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></summary>
+        <div class="faq-a">Yes. A free plan is included when you sign up. Paid plans (K25, K50, K100, and K200 per month) are available if you need more.</div>
+      </details>
+      <details class="faq-item glass">
+        <summary>Does it support voice?<span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></summary>
+        <div class="faq-a">ANICADE AI currently supports voice input and voice call mode. A fuller, standalone voice assistant experience is on the roadmap.</div>
+      </details>
+      <details class="faq-item glass">
+        <summary>How do I get started?<span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></summary>
+        <div class="faq-a">Tap "Get Started" to create your free account and start chatting with ANICADE AI right away.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FINAL CTA ═══ -->
+<section>
+  <div class="wrap">
+    <div class="cta-final glass reveal">
+      <div class="logo-ring"><img src="https://i.imgur.com/9mjKZAj.jpeg" alt="ANICADE AI logo"/></div>
+      <h2>Ready to go beyond conversation?</h2>
+      <p>Join ANICADE AI and start turning questions into results — for free.</p>
+      <a href="login.html" class="btn btn-primary">
+        Get Started — It's Free
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="foot-inner">
+    <a href="#top" class="foot-brand">
+      <div class="logo-ring"><img src="https://i.imgur.com/9mjKZAj.jpeg" alt="ANICADE Tech logo"/></div>
+      <strong>ANICADE AI</strong>
+    </a>
+    <div class="foot-links">
+      <a href="#what">What It Is</a>
+      <a href="#capabilities">Capabilities</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="login.html">Sign In</a>
+    </div>
+  </div>
+  <p class="foot-copy">© 2026 <a href="https://www.anicadetech.xyz" target="_blank" rel="noopener" style="color:var(--tx3)">ANICADE Tech</a>. All rights reserved. · ANICADE AI</p>
+</footer>
+
+<button class="top-btn" id="topBtn" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+</button>
+
+<script>
+// mobile drawer
+const menuBtn=document.getElementById('menuBtn'),drawer=document.getElementById('navDrawer'),scrim=document.getElementById('navScrim'),closeBtn=document.getElementById('drawerClose');
+function openDrawer(){drawer.classList.add('open');scrim.classList.add('open')}
+function closeDrawer(){drawer.classList.remove('open');scrim.classList.remove('open')}
+menuBtn?.addEventListener('click',openDrawer);
+closeBtn?.addEventListener('click',closeDrawer);
+scrim?.addEventListener('click',closeDrawer);
+drawer?.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeDrawer));
+
+// scroll reveal
+const io=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:0.12,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+// back to top
+const topBtn=document.getElementById('topBtn');
+window.addEventListener('scroll',()=>{topBtn.classList.toggle('show',window.scrollY>600)},{passive:true});
+topBtn.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+
+// close only one faq open at a time (accordion feel)
+document.querySelectorAll('.faq-item').forEach(item=>{
+  item.addEventListener('toggle',()=>{
+    if(item.open){
+      document.querySelectorAll('.faq-item').forEach(o=>{if(o!==item)o.open=false});
+    }
+  });
+});
+</script>
+</body>
+</html>
